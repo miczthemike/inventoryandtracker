@@ -2,6 +2,11 @@
 //  INITIALIZATION
 // ============================================================
 
+let authState = null;
+let usersCache = [];
+let liveEvents = null;
+let sessionCheckInProgress = false;
+
 document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     const today = toDateInputValue(now);
@@ -9,9 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reportEndDate').value = today;
     document.querySelector('[name="dueDate"]').min = today;
 
-    document.getElementById('content-equipment').addEventListener('click', (event) => {
-        const button = event.target.closest('.equipment-form-toggle > button');
-        if (button) toggleEquipmentForm(button);
+    document.querySelectorAll('#content-consumables, #content-equipment').forEach(section => {
+        section.addEventListener('click', (event) => {
+            const button = event.target.closest('.form-toggle > button');
+            if (button) toggleFormPanel(button);
+        });
     });
     document.getElementById('equipmentTableBody').addEventListener('click', handleEquipmentAction);
     document.getElementById('inventoryTableBody').addEventListener('click', handleStockAction);
@@ -42,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.querySelectorAll('.equipment-form-panel').forEach(panel => {
+    document.querySelectorAll('.form-panel').forEach(panel => {
         panel.addEventListener('transitionend', (event) => {
             if (event.propertyName === 'max-height' && panel.getAttribute('aria-hidden') === 'false') {
                 panel.style.maxHeight = 'none';
@@ -50,7 +57,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    connectLiveUpdates();
+    document.getElementById('logoutButton').addEventListener('click', signOut);
+    document.getElementById('changeOwnPasswordButton').addEventListener('click', () => {
+        window.location.href = '/login.html?change-password=1';
+    });
+    document.getElementById('userCreateForm').addEventListener('submit', createUser);
+    document.getElementById('userCreateForm').elements.role.addEventListener('change', updateCreatePermissionVisibility);
+    document.getElementById('userTableBody').addEventListener('click', handleUserAction);
+    document.getElementById('userEditForm').elements.role.addEventListener('change', updateEditPermissionVisibility);
+    document.getElementById('userEditForm').addEventListener('submit', saveUserAccess);
+    document.getElementById('cancelUserEditButton').addEventListener('click', () => document.getElementById('userEditDialog').close());
+    document.getElementById('copyTemporaryPasswordButton').addEventListener('click', copyTemporaryPassword);
+    initializeAuthentication();
 });
 
 function connectLiveUpdates() {
@@ -66,7 +84,18 @@ function connectLiveUpdates() {
         refreshSharedData();
     });
     events.addEventListener('data-updated', refreshSharedData);
-    events.onerror = () => setLiveUpdateStatus('Reconnecting to live updates…', 'disconnected');
+    events.onerror = () => {
+        setLiveUpdateStatus('Reconnecting to live updates…', 'disconnected');
+        if (sessionCheckInProgress) return;
+        sessionCheckInProgress = true;
+        fetch('/api/auth/status')
+            .then(response => response.json())
+            .then(result => {
+                if (!result.authenticated) handleExpiredSession();
+            })
+            .catch(error => console.error('[Authentication] Could not verify the session:', error))
+            .finally(() => { sessionCheckInProgress = false; });
+    };
 }
 
 function setLiveUpdateStatus(message, state) {
@@ -77,7 +106,10 @@ function setLiveUpdateStatus(message, state) {
 }
 
 async function refreshSharedData() {
-    const results = await Promise.allSettled([fetchConsumableData(), fetchEquipmentData()]);
+    const tasks = [];
+    if (hasPermission('consumablesView')) tasks.push(fetchConsumableData());
+    if (hasPermission('equipmentView')) tasks.push(fetchEquipmentData());
+    const results = await Promise.allSettled(tasks);
     const failed = results.find(result => result.status === 'rejected');
     if (failed) {
         console.error('[Live updates] Failed to refresh shared data:', failed.reason);
@@ -85,7 +117,7 @@ async function refreshSharedData() {
         return;
     }
 
-    if (latestReportData) await generateReport({ silent: true });
+    if (latestReportData && hasPermission('analyticsView')) await generateReport({ silent: true });
 }
 
 function toDateInputValue(date) {
@@ -93,7 +125,7 @@ function toDateInputValue(date) {
     return localDate.toISOString().slice(0, 10);
 }
 
-function toggleEquipmentForm(button) {
+function toggleFormPanel(button) {
     const panel = document.getElementById(button.getAttribute('aria-controls'));
     const isExpanded = button.getAttribute('aria-expanded') === 'true';
 
@@ -113,15 +145,246 @@ function toggleEquipmentForm(button) {
     panel.style.maxHeight = `${panel.scrollHeight}px`;
 }
 
+async function initializeAuthentication() {
+    try {
+        const response = await fetch('/api/auth/status');
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not check sign-in status.');
+        if (!result.authenticated || result.user.forcePasswordChange) return window.location.replace('/login.html');
+        authState = { ...result.user, isOwner: result.isOwner };
+        await enterApplication();
+    } catch (error) {
+        console.error('[Authentication] Could not verify the session:', error);
+        window.location.replace('/login.html');
+    }
+}
+
+async function signOut() {
+    if (liveEvents) {
+        liveEvents.close();
+        liveEvents = null;
+    }
+    try { await fetch('/api/auth/logout', { method: 'POST' }); }
+    catch (error) { console.error('[Authentication] Sign-out request failed:', error); }
+    finally { window.location.replace('/login.html'); }
+}
+
+async function handleExpiredSession() {
+    authState = null;
+    allItems = [];
+    allRequests = [];
+    allEquipment = [];
+    allEquipmentLogs = [];
+    latestReportData = null;
+    if (liveEvents) {
+        liveEvents.close();
+        liveEvents = null;
+    }
+    window.location.replace('/login.html');
+}
+
+function hasPermission(permission) {
+    return authState?.isOwner === true || authState?.permissions?.[permission] === true;
+}
+
+async function enterApplication() {
+    document.getElementById('signedInUser').textContent = `${authState.username} · ${authState.role}`;
+    applyAccessControls();
+    document.body.classList.remove('app-pending');
+
+    if (hasPermission('consumablesView')) await fetchConsumableData();
+    if (hasPermission('equipmentView')) await fetchEquipmentData();
+    const defaultTab = hasPermission('consumablesView') ? 'consumables'
+        : hasPermission('equipmentView') ? 'equipment'
+            : hasPermission('analyticsView') ? 'analytics' : 'users';
+    switchTab(defaultTab);
+    if (!liveEvents) connectLiveUpdates();
+}
+
+function applyAccessControls() {
+    document.getElementById('tab-consumables').classList.toggle('hidden', !hasPermission('consumablesView'));
+    document.getElementById('tab-equipment').classList.toggle('hidden', !hasPermission('equipmentView'));
+    document.getElementById('tab-analytics').classList.toggle('hidden', !hasPermission('analyticsView'));
+    document.getElementById('tab-users').classList.toggle('hidden', !authState.isOwner);
+    document.getElementById('addItemPanel').closest('.form-toggle').classList.toggle('hidden', !hasPermission('consumablesAdd'));
+    document.getElementById('requestPanel').closest('.form-toggle').classList.toggle('hidden', !hasPermission('consumablesRequest'));
+    document.getElementById('addEquipmentPanel').closest('.form-toggle').classList.toggle('hidden', !hasPermission('equipmentAdd'));
+    ['checkoutEquipmentPanel', 'returnEquipmentPanel'].forEach(id => {
+        document.getElementById(id).closest('.form-toggle').classList.toggle('hidden', !hasPermission('equipmentManage'));
+    });
+    document.getElementById('editEquipmentDialog').querySelector('form').classList.toggle('hidden', !hasPermission('equipmentManage'));
+    document.getElementById('inventoryTableBody').closest('table').querySelector('th:last-child')
+        .classList.toggle('hidden', !hasPermission('consumablesStockManage'));
+    document.getElementById('equipmentTableBody').closest('table').querySelector('th:last-child')
+        .classList.toggle('hidden', !hasPermission('equipmentManage'));
+    renderInventory();
+    renderEquipment();
+}
+
+function showTemporaryPassword(password) {
+    document.getElementById('temporaryPasswordText').textContent = password;
+    document.getElementById('temporaryPasswordResult').classList.remove('hidden');
+    document.getElementById('temporaryPasswordResult').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function copyTemporaryPassword() {
+    const password = document.getElementById('temporaryPasswordText').textContent;
+    try {
+        await navigator.clipboard.writeText(password);
+        alert('Temporary password copied.');
+    } catch {
+        alert('Clipboard access is unavailable. Select and copy the temporary password shown above.');
+    }
+}
+
+function permissionValues(form) {
+    return Object.fromEntries(PERMISSION_KEYS.map(key => [key, form.elements[key].checked]));
+}
+
+const PERMISSION_KEYS = [
+    'consumablesView', 'consumablesRequest', 'consumablesAdd', 'consumablesStockManage',
+    'equipmentView', 'equipmentAdd', 'equipmentManage', 'analyticsView'
+];
+
+function updateCreatePermissionVisibility() {
+    const form = document.getElementById('userCreateForm');
+    const custom = form.elements.role.value === 'custom';
+    document.getElementById('newUserPermissions').classList.toggle('hidden', !custom);
+    if (custom) {
+        form.elements.consumablesView.checked = true;
+        form.elements.consumablesRequest.checked = true;
+    }
+}
+
+function updateEditPermissionVisibility() {
+    const form = document.getElementById('userEditForm');
+    const custom = form.elements.role.value === 'custom';
+    form.querySelector('.user-permission-grid').classList.toggle('hidden', !custom);
+}
+
+async function loadUsers() {
+    const response = await fetch('/api/users');
+    const users = await response.json();
+    if (!response.ok || !Array.isArray(users)) throw new Error(users.message || 'Unable to load users.');
+    usersCache = users;
+    renderUsers();
+}
+
+function renderUsers() {
+    const tbody = document.getElementById('userTableBody');
+    tbody.innerHTML = '';
+    usersCache.forEach(user => {
+        const isOwner = user.role === 'owner';
+        const profile = user.role === 'admin' ? 'Administrator'
+            : user.role === 'owner' ? 'Owner'
+                : user.role === 'custom' ? 'Custom access' : 'Regular user';
+        const details = user.role === 'custom'
+            ? PERMISSION_KEYS.filter(key => user.permissions[key]).join(', ') || 'No app access'
+            : user.role === 'user' ? 'Consumables view and requests' : 'All app features';
+        const status = `${user.active ? 'Active' : 'Disabled'}${user.forcePasswordChange ? ' · Password change required' : ''}`;
+        const actions = isOwner ? 'Owner account' : `
+            <div class="flex flex-wrap justify-center gap-2">
+                <button type="button" data-user-action="edit" data-user-id="${escapeHtml(user.id)}" class="rounded border px-2 py-1 text-xs hover:bg-gray-50">Edit access</button>
+                <button type="button" data-user-action="reset" data-user-id="${escapeHtml(user.id)}" class="rounded border px-2 py-1 text-xs hover:bg-gray-50">Reset password</button>
+                <button type="button" data-user-action="toggle" data-user-id="${escapeHtml(user.id)}" class="rounded border px-2 py-1 text-xs hover:bg-gray-50">${user.active ? 'Disable' : 'Enable'}</button>
+            </div>`;
+        tbody.innerHTML += `<tr>
+            <td class="border p-2 font-medium">${escapeHtml(user.username)}</td>
+            <td class="border p-2"><strong>${profile}</strong><br><span class="text-xs text-gray-500">${escapeHtml(details)}</span></td>
+            <td class="border p-2 text-center">${escapeHtml(status)}</td>
+            <td class="border p-2 text-center">${actions}</td>
+        </tr>`;
+    });
+}
+
+async function createUser(event) {
+    event.preventDefault();
+    const form = event.target;
+    const role = form.elements.role.value;
+    const payload = { username: form.elements.username.value.trim(), role };
+    if (role === 'custom') payload.permissions = permissionValues(form);
+    const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) return alert(result.message || 'Could not create account.');
+    form.reset();
+    updateCreatePermissionVisibility();
+    showTemporaryPassword(result.temporaryPassword);
+    await loadUsers();
+}
+
+async function handleUserAction(event) {
+    const button = event.target.closest('[data-user-action]');
+    if (!button) return;
+    const user = usersCache.find(entry => entry.id === button.dataset.userId);
+    if (!user) return;
+    if (button.dataset.userAction === 'edit') {
+        const form = document.getElementById('userEditForm');
+        form.elements.userId.value = user.id;
+        form.elements.role.value = user.role;
+        PERMISSION_KEYS.forEach(key => { form.elements[key].checked = user.permissions[key] === true; });
+        updateEditPermissionVisibility();
+        document.getElementById('userEditDialog').showModal();
+    } else if (button.dataset.userAction === 'reset') {
+        if (!confirm(`Issue a temporary password for ${user.username}? Their current sessions will be signed out.`)) return;
+        const response = await fetch(`/api/users/${encodeURIComponent(user.id)}/reset-password`, { method: 'POST' });
+        const result = await response.json();
+        if (!response.ok || !result.success) return alert(result.message || 'Could not reset password.');
+        showTemporaryPassword(result.temporaryPassword);
+        await loadUsers();
+    } else if (button.dataset.userAction === 'toggle') {
+        const response = await fetch(`/api/users/${encodeURIComponent(user.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: user.role, active: !user.active, permissions: user.permissions })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) return alert(result.message || 'Could not update account.');
+        await loadUsers();
+    }
+}
+
+async function saveUserAccess(event) {
+    event.preventDefault();
+    const form = event.target;
+    const user = usersCache.find(entry => entry.id === form.elements.userId.value);
+    if (!user) return alert('User not found.');
+    const role = form.elements.role.value;
+    const response = await fetch(`/api/users/${encodeURIComponent(user.id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            role,
+            active: user.active,
+            permissions: role === 'custom' ? permissionValues(form) : user.permissions
+        })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) return alert(result.message || 'Could not update user access.');
+    document.getElementById('userEditDialog').close();
+    await loadUsers();
+}
+
 // ============================================================
 //  TAB SWITCHING
 // ============================================================
 
 function switchTab(tabName) {
+    const allowed = {
+        consumables: hasPermission('consumablesView'),
+        equipment: hasPermission('equipmentView'),
+        analytics: hasPermission('analyticsView'),
+        users: authState?.isOwner === true
+    };
+    if (!allowed[tabName]) return;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById('tab-' + tabName).classList.add('active');
     document.getElementById('content-' + tabName).classList.add('active');
+    if (tabName === 'users') loadUsers().catch(error => alert(error.message));
 }
 
 // ============================================================
@@ -134,6 +397,10 @@ let allRequests = [];
 async function fetchConsumableData() {
     const response = await fetch('/api/data');
     const data = await response.json();
+    if (response.status === 401) {
+        await handleExpiredSession();
+        throw new Error('Your session has ended. Please sign in again.');
+    }
     if (!response.ok || !Array.isArray(data.items)) throw new Error(data.message || 'Failed to load consumables.');
     allItems = data.items;
     allRequests = data.requests;
@@ -180,9 +447,10 @@ function renderInventory() {
 
 function updateInventoryTable(items) {
     const tbody = document.getElementById('inventoryTableBody');
+    const canManageStock = hasPermission('consumablesStockManage');
     tbody.innerHTML = '';
     if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="border p-4 text-center text-gray-400">${allItems.length ? 'No consumables match your filters.' : 'No items yet. Add your first consumable above.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${canManageStock ? 6 : 5}" class="border p-4 text-center text-gray-400">${allItems.length ? 'No consumables match your filters.' : 'No items yet. Add your first consumable above.'}</td></tr>`;
         return;
     }
     items.forEach(item => {
@@ -201,11 +469,13 @@ function updateInventoryTable(items) {
                 <td class="border p-2">${escapeHtml(item.category)}</td>
                 <td class="border p-2 text-center font-bold ${stockClass}">${item.quantity}</td>
                 <td class="border p-2 text-center">${stockStatus} <span class="text-xs text-gray-500">(${threshold})</span></td>
-                <td class="border p-2 text-center no-print">
+                <td class="border p-2 text-center no-print ${canManageStock ? '' : 'hidden'}">
                     <div class="flex flex-wrap justify-center gap-1">
-                        <button type="button" data-stock-action="restock" data-item-id="${escapeHtml(item.id)}" class="rounded bg-teal-50 px-2 py-1 text-xs text-teal-800 hover:bg-teal-100">Restock</button>
-                        <button type="button" data-stock-action="adjust" data-item-id="${escapeHtml(item.id)}" class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-gray-200">Adjust</button>
-                        <button type="button" data-stock-action="threshold" data-item-id="${escapeHtml(item.id)}" class="rounded bg-amber-50 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100">Alert</button>
+                        ${canManageStock ? `
+                            <button type="button" data-stock-action="restock" data-item-id="${escapeHtml(item.id)}" class="rounded bg-teal-50 px-2 py-1 text-xs text-teal-800 hover:bg-teal-100">Restock</button>
+                            <button type="button" data-stock-action="adjust" data-item-id="${escapeHtml(item.id)}" class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-gray-200">Adjust</button>
+                            <button type="button" data-stock-action="threshold" data-item-id="${escapeHtml(item.id)}" class="rounded bg-amber-50 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100">Alert</button>
+                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -352,6 +622,10 @@ async function fetchEquipmentData() {
     ]);
     allEquipment = await eqRes.json();
     allEquipmentLogs = await logRes.json();
+    if (eqRes.status === 401 || logRes.status === 401) {
+        await handleExpiredSession();
+        throw new Error('Your session has ended. Please sign in again.');
+    }
     if (!eqRes.ok || !Array.isArray(allEquipment)) throw new Error('Failed to load equipment.');
     if (!logRes.ok || !Array.isArray(allEquipmentLogs)) throw new Error('Failed to load equipment activity.');
 
@@ -400,9 +674,10 @@ function renderEquipment() {
 
 function updateEquipmentTable(equipment) {
     const tbody = document.getElementById('equipmentTableBody');
+    const canManageEquipment = hasPermission('equipmentManage');
     tbody.innerHTML = '';
     if (equipment.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="border p-4 text-center text-gray-400">${allEquipment.length ? 'No equipment matches your filters.' : 'No equipment registered yet.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${canManageEquipment ? 10 : 9}" class="border p-4 text-center text-gray-400">${allEquipment.length ? 'No equipment matches your filters.' : 'No equipment registered yet.'}</td></tr>`;
         return;
     }
     equipment.forEach(eq => {
@@ -416,13 +691,13 @@ function updateEquipmentTable(equipment) {
             : '—';
 
         let actions = '';
-        if (eq.status === 'available') {
+        if (canManageEquipment && eq.status === 'available') {
             actions += `<button type="button" data-equipment-action="maintenance" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200">🔧 Maintenance</button>`;
-        } else if (eq.status === 'maintenance') {
+        } else if (canManageEquipment && eq.status === 'maintenance') {
             actions += `<button type="button" data-equipment-action="available" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">✅ Mark Available</button>`;
         }
-        actions += `<button type="button" data-equipment-action="edit" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">Edit</button>`;
-        if (eq.status !== 'checked-out') {
+        if (canManageEquipment) actions += `<button type="button" data-equipment-action="edit" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">Edit</button>`;
+        if (canManageEquipment && eq.status !== 'checked-out') {
             actions += `<button type="button" data-equipment-action="delete" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">Remove</button>`;
         }
 
@@ -437,7 +712,7 @@ function updateEquipmentTable(equipment) {
                 <td class="border p-2">${escapeHtml(eq.currentLocation)}</td>
                 <td class="border p-2 text-center">${borrowerInfo}</td>
                 <td class="border p-2 text-center">${conditionBadge}</td>
-                <td class="border p-2 text-center no-print"><div class="flex flex-wrap justify-center gap-1">${actions}</div></td>
+                <td class="border p-2 text-center no-print ${canManageEquipment ? '' : 'hidden'}"><div class="flex flex-wrap justify-center gap-1">${actions}</div></td>
             </tr>
         `;
     });

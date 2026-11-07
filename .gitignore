@@ -4,3 +4,5 @@ backups/
 db.json
 db.bak.json
 db.tmp.json
+users.json
+users.tmp.json

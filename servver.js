@@ -2,20 +2,36 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const crypto = require('crypto');
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
 const DB_TEMP_FILE = path.join(__dirname, 'db.tmp.json');
 const DB_BACKUP_FILE = path.join(__dirname, 'db.bak.json');
+const AUTH_FILE = path.join(__dirname, 'users.json');
+const AUTH_TEMP_FILE = path.join(__dirname, 'users.tmp.json');
 const BACKUP_DIR = path.join(__dirname, 'backups');
 const eventClients = new Set();
+const sessions = new Map();
+const loginAttempts = new Map();
+const SESSION_COOKIE = 'proxy_session';
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const OWNER_USERNAME = 'miczthemike';
+const PERMISSION_KEYS = [
+    'consumablesView', 'consumablesRequest', 'consumablesAdd', 'consumablesStockManage',
+    'equipmentView', 'equipmentAdd', 'equipmentManage', 'analyticsView'
+];
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
 app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
+app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
 
 function broadcastDataUpdated() {
     const message = `event: data-updated\ndata: ${JSON.stringify({ updatedAt: new Date().toISOString() })}\n\n`;
@@ -246,6 +262,333 @@ setInterval(createDailyBackup, 24 * 60 * 60 * 1000);
 const initialDB = readDB();
 console.log(`[DB] Loaded: ${initialDB.items.length} consumables, ${initialDB.equipment.length} equipment, ${initialDB.requests.length} requests.`);
 
+function readAuthStore() {
+    if (!fs.existsSync(AUTH_FILE)) return { users: [] };
+    try {
+        const store = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8'));
+        if (!store || !Array.isArray(store.users)) throw new Error('Invalid users.json structure.');
+        return store;
+    } catch (err) {
+        console.error('[Auth] Could not read the user store:', err.message);
+        throw new Error('The user store is invalid; refusing to start without authentication data.');
+    }
+}
+
+function writeAuthStore(store) {
+    fs.writeFileSync(AUTH_TEMP_FILE, JSON.stringify(store, null, 2), { encoding: 'utf8', mode: 0o600 });
+    fs.renameSync(AUTH_TEMP_FILE, AUTH_FILE);
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    return { salt, passwordHash: hash };
+}
+
+const DUMMY_CREDENTIALS = hashPassword(crypto.randomBytes(32).toString('hex'));
+
+function verifyPassword(password, user) {
+    if (typeof password !== 'string' || typeof user.passwordHash !== 'string' || typeof user.salt !== 'string') return false;
+    const expected = Buffer.from(user.passwordHash, 'hex');
+    const actual = crypto.scryptSync(password, user.salt, 64);
+    return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+function normalizedPermissions(permissions = {}) {
+    const result = Object.fromEntries(PERMISSION_KEYS.map(key => [key, permissions[key] === true]));
+    result.consumablesView ||= result.consumablesRequest || result.consumablesAdd || result.consumablesStockManage;
+    result.equipmentView ||= result.equipmentAdd || result.equipmentManage;
+    return result;
+}
+
+function allAppPermissions() {
+    return Object.fromEntries(PERMISSION_KEYS.map(key => [key, true]));
+}
+
+function getRequestUser(req) {
+    const cookieHeader = req.headers.cookie || '';
+    const cookie = cookieHeader.split(';').map(value => value.trim())
+        .find(value => value.startsWith(`${SESSION_COOKIE}=`));
+    if (!cookie) return null;
+    const token = cookie.slice(SESSION_COOKIE.length + 1);
+    const session = sessions.get(token);
+    if (!session) return null;
+    if (session.expiresAt <= Date.now()) {
+        sessions.delete(token);
+        return null;
+    }
+    const user = readAuthStore().users.find(entry => entry.id === session.userId && entry.active);
+    if (!user) {
+        sessions.delete(token);
+        return null;
+    }
+    return { token, user };
+}
+
+function safeUser(user) {
+    return {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        active: user.active,
+        forcePasswordChange: user.forcePasswordChange,
+        createdAt: user.createdAt,
+        permissions: user.role === 'owner' || user.role === 'admin'
+            ? allAppPermissions()
+            : normalizedPermissions(user.permissions)
+    };
+}
+
+function setSessionCookie(res, token, secure) {
+    res.setHeader('Set-Cookie',
+        `${SESSION_COOKIE}=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL_MS / 1000}${secure ? '; Secure' : ''}`);
+}
+
+function clearSessionCookie(res) {
+    res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`);
+}
+
+function isLocalRequest(req) {
+    const address = req.socket.remoteAddress || '';
+    const host = (req.get('host') || '').toLowerCase();
+    const localHost = /^(localhost|127\.0\.0\.1)(:\d+)?$|^\[::1\](?::\d+)?$/.test(host);
+    return localHost && (address === '::1' || address === '127.0.0.1' || address === '::ffff:127.0.0.1');
+}
+
+function originIsSame(req) {
+    if (!req.get('origin')) return true;
+    try {
+        const origin = new URL(req.get('origin'));
+        return origin.host === req.get('host') && origin.protocol === `${req.protocol}:`;
+    } catch {
+        return false;
+    }
+}
+
+function requireAuthenticated(req, res, next) {
+    const identity = getRequestUser(req);
+    if (!identity) return res.status(401).json({ success: false, code: 'authentication_required', message: 'Please sign in.' });
+    if (req.method !== 'GET' && !originIsSame(req)) {
+        return res.status(403).json({ success: false, message: 'Request origin was rejected.' });
+    }
+    req.auth = safeUser(identity.user);
+    req.sessionToken = identity.token;
+    if (req.auth.forcePasswordChange && !req.originalUrl.startsWith('/api/auth/change-password')) {
+        return res.status(403).json({ success: false, code: 'password_change_required', message: 'Change your temporary password to continue.' });
+    }
+    next();
+}
+
+function requirePermission(permission) {
+    return (req, res, next) => {
+        if (req.auth.role === 'owner' || req.auth.permissions[permission]) return next();
+        return res.status(403).json({ success: false, code: 'forbidden', message: 'Your account does not have permission for this action.' });
+    };
+}
+
+function isValidPassword(password) {
+    return typeof password === 'string' && password.length >= 12 && password.length <= 256;
+}
+
+app.get('/api/auth/status', (req, res) => {
+    const store = readAuthStore();
+    const identity = getRequestUser(req);
+    if (!identity) return res.json({ setupRequired: store.users.length === 0, authenticated: false });
+    const user = safeUser(identity.user);
+    res.json({
+        setupRequired: false,
+        authenticated: true,
+        user,
+        isOwner: user.role === 'owner'
+    });
+});
+
+app.post('/api/auth/setup', (req, res) => {
+    if (!originIsSame(req)) return res.status(403).json({ success: false, message: 'Request origin was rejected.' });
+    if (!isLocalRequest(req)) return res.status(403).json({ success: false, message: 'Owner setup must be completed from the server computer.' });
+    const store = readAuthStore();
+    if (store.users.length !== 0) return res.status(409).json({ success: false, message: 'Owner account has already been set up.' });
+    const { password, confirmPassword } = req.body;
+    if (!isValidPassword(password)) return res.status(400).json({ success: false, message: 'Use a password between 12 and 256 characters.' });
+    if (password !== confirmPassword) return res.status(400).json({ success: false, message: 'Passwords do not match.' });
+
+    const credentials = hashPassword(password);
+    const owner = {
+        id: crypto.randomUUID(),
+        username: OWNER_USERNAME,
+        role: 'owner',
+        active: true,
+        forcePasswordChange: false,
+        createdAt: new Date().toISOString(),
+        ...credentials
+    };
+    writeAuthStore({ users: [owner] });
+    const token = crypto.randomBytes(32).toString('base64url');
+    sessions.set(token, { userId: owner.id, expiresAt: Date.now() + SESSION_TTL_MS });
+    setSessionCookie(res, token, req.secure);
+    res.json({ success: true, user: safeUser(owner), isOwner: true });
+});
+
+app.post('/api/auth/login', (req, res) => {
+    if (!originIsSame(req)) return res.status(403).json({ success: false, message: 'Request origin was rejected.' });
+    const username = typeof req.body.username === 'string' ? req.body.username.trim().toLowerCase() : '';
+    if (username.length > 32) return res.status(401).json({ success: false, message: 'Username or password is incorrect.' });
+    const key = req.ip || req.socket.remoteAddress || 'unknown';
+    const attempt = loginAttempts.get(key) || { count: 0, lockedUntil: 0 };
+    if (attempt.lockedUntil > Date.now()) {
+        return res.status(429).json({ success: false, message: 'Too many sign-in attempts. Try again in 15 minutes.' });
+    }
+
+    const user = readAuthStore().users.find(entry => entry.username.toLowerCase() === username && entry.active);
+    const password = req.body.password;
+    const passwordMatches = typeof password === 'string' && password.length <= 256 &&
+        verifyPassword(password, user || DUMMY_CREDENTIALS);
+    if (!user || !passwordMatches) {
+        attempt.count += 1;
+        if (attempt.count >= 5) {
+            attempt.count = 0;
+            attempt.lockedUntil = Date.now() + 15 * 60 * 1000;
+        }
+        loginAttempts.set(key, attempt);
+        return res.status(401).json({ success: false, message: 'Username or password is incorrect.' });
+    }
+
+    loginAttempts.delete(key);
+    const token = crypto.randomBytes(32).toString('base64url');
+    sessions.set(token, { userId: user.id, expiresAt: Date.now() + SESSION_TTL_MS });
+    setSessionCookie(res, token, req.secure);
+    const publicUser = safeUser(user);
+    res.json({ success: true, user: publicUser, isOwner: user.role === 'owner' });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    const identity = getRequestUser(req);
+    if (identity) {
+        sessions.delete(identity.token);
+        for (const client of eventClients) {
+            if (client.authUserId === identity.user.id) client.end();
+        }
+    }
+    clearSessionCookie(res);
+    res.json({ success: true });
+});
+
+app.post('/api/auth/change-password', requireAuthenticated, (req, res) => {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const store = readAuthStore();
+    const user = store.users.find(entry => entry.id === req.auth.id);
+    if (!user || (!user.forcePasswordChange && !verifyPassword(currentPassword, user))) {
+        return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+    }
+    if (!isValidPassword(newPassword)) return res.status(400).json({ success: false, message: 'Use a password between 12 and 256 characters.' });
+    if (newPassword !== confirmPassword) return res.status(400).json({ success: false, message: 'Passwords do not match.' });
+
+    Object.assign(user, hashPassword(newPassword), { forcePasswordChange: false });
+    writeAuthStore(store);
+    const token = crypto.randomBytes(32).toString('base64url');
+    sessions.delete(req.sessionToken);
+    sessions.set(token, { userId: user.id, expiresAt: Date.now() + SESSION_TTL_MS });
+    setSessionCookie(res, token, req.secure);
+    const publicUser = safeUser(user);
+    res.json({ success: true, user: publicUser, isOwner: user.role === 'owner' });
+});
+
+app.use('/api', requireAuthenticated);
+app.use('/uploads', requireAuthenticated, express.static(path.join(__dirname, 'uploads')));
+
+function revokeUserSessions(userId) {
+    for (const [token, session] of sessions) {
+        if (session.userId === userId) sessions.delete(token);
+    }
+    for (const client of eventClients) {
+        if (client.authUserId === userId) client.end();
+    }
+}
+
+function isOwner(req, res, next) {
+    if (req.auth.role === 'owner') return next();
+    return res.status(403).json({ success: false, code: 'forbidden', message: 'Only the owner can manage users.' });
+}
+
+function validateNewUsername(username) {
+    return typeof username === 'string' && /^[a-zA-Z0-9._-]{3,32}$/.test(username);
+}
+
+function defaultUserPermissions() {
+    return normalizedPermissions({ consumablesView: true, consumablesRequest: true });
+}
+
+function effectiveUserPermissions(role, permissions) {
+    if (role === 'admin') return allAppPermissions();
+    if (role === 'custom') return normalizedPermissions(permissions);
+    return defaultUserPermissions();
+}
+
+app.get('/api/users', isOwner, (req, res) => {
+    res.json(readAuthStore().users.map(safeUser));
+});
+
+app.post('/api/users', isOwner, (req, res) => {
+    const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
+    const role = req.body.role;
+    if (!validateNewUsername(username)) {
+        return res.status(400).json({ success: false, message: 'Username must be 3–32 characters using letters, numbers, dots, underscores, or hyphens.' });
+    }
+    if (!['user', 'custom', 'admin'].includes(role)) {
+        return res.status(400).json({ success: false, message: 'Choose a valid user role.' });
+    }
+    const store = readAuthStore();
+    if (store.users.some(user => user.username.toLowerCase() === username.toLowerCase())) {
+        return res.status(409).json({ success: false, message: 'That username is already in use.' });
+    }
+
+    const temporaryPassword = crypto.randomBytes(18).toString('base64url');
+    const user = {
+        id: crypto.randomUUID(),
+        username,
+        role,
+        active: true,
+        forcePasswordChange: true,
+        createdAt: new Date().toISOString(),
+        permissions: effectiveUserPermissions(role, req.body.permissions),
+        ...hashPassword(temporaryPassword)
+    };
+    store.users.push(user);
+    writeAuthStore(store);
+    res.status(201).json({ success: true, user: safeUser(user), temporaryPassword });
+});
+
+app.put('/api/users/:id', isOwner, (req, res) => {
+    const store = readAuthStore();
+    const user = store.users.find(entry => entry.id === req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    if (user.role === 'owner') return res.status(400).json({ success: false, message: 'The owner account cannot be modified here.' });
+    const role = req.body.role;
+    if (!['user', 'custom', 'admin'].includes(role)) {
+        return res.status(400).json({ success: false, message: 'Choose a valid user role.' });
+    }
+    if (typeof req.body.active !== 'boolean') {
+        return res.status(400).json({ success: false, message: 'Account status must be provided.' });
+    }
+    user.role = role;
+    user.active = req.body.active;
+    user.permissions = effectiveUserPermissions(role, req.body.permissions);
+    writeAuthStore(store);
+    revokeUserSessions(user.id);
+    res.json({ success: true, user: safeUser(user) });
+});
+
+app.post('/api/users/:id/reset-password', isOwner, (req, res) => {
+    const store = readAuthStore();
+    const user = store.users.find(entry => entry.id === req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    if (user.role === 'owner') return res.status(400).json({ success: false, message: 'The owner password cannot be reset from user management.' });
+    const temporaryPassword = crypto.randomBytes(18).toString('base64url');
+    Object.assign(user, hashPassword(temporaryPassword), { forcePasswordChange: true });
+    writeAuthStore(store);
+    revokeUserSessions(user.id);
+    res.json({ success: true, temporaryPassword });
+});
+
 app.get('/api/events', (req, res) => {
     res.set({
         'Content-Type': 'text/event-stream',
@@ -255,6 +598,7 @@ app.get('/api/events', (req, res) => {
     });
     res.flushHeaders();
     res.write('event: connected\ndata: {}\n\n');
+    res.authUserId = req.auth.id;
     eventClients.add(res);
 
     const heartbeat = setInterval(() => {
@@ -277,12 +621,12 @@ app.get('/api/events', (req, res) => {
 //  API ROUTES — CONSUMABLES
 // ============================================================
 
-app.get('/api/data', (req, res) => {
+app.get('/api/data', requirePermission('consumablesView'), (req, res) => {
     try { res.json(readDB()); }
     catch (err) { res.status(500).json({ success: false, message: 'Failed to read database.' }); }
 });
 
-app.post('/api/items', upload.single('photo'), async (req, res) => {
+app.post('/api/items', requirePermission('consumablesAdd'), upload.single('photo'), async (req, res) => {
     await acquireWriteLock();
     try {
         const quantity = Number(req.body.quantity);
@@ -310,7 +654,7 @@ app.post('/api/items', upload.single('photo'), async (req, res) => {
     } finally { releaseWriteLock(); }
 });
 
-app.post('/api/items/:id/adjust', async (req, res) => {
+app.post('/api/items/:id/adjust', requirePermission('consumablesStockManage'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -337,7 +681,7 @@ app.post('/api/items/:id/adjust', async (req, res) => {
     } finally { releaseWriteLock(); }
 });
 
-app.post('/api/requests', async (req, res) => {
+app.post('/api/requests', requirePermission('consumablesRequest'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -374,7 +718,7 @@ app.post('/api/requests', async (req, res) => {
 // ============================================================
 
 // Get all equipment
-app.get('/api/equipment', (req, res) => {
+app.get('/api/equipment', requirePermission('equipmentView'), (req, res) => {
     try {
         const db = readDB();
         res.json(db.equipment);
@@ -382,7 +726,7 @@ app.get('/api/equipment', (req, res) => {
 });
 
 // Add new equipment
-app.post('/api/equipment', upload.single('photo'), async (req, res) => {
+app.post('/api/equipment', requirePermission('equipmentAdd'), upload.single('photo'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -413,7 +757,7 @@ app.post('/api/equipment', upload.single('photo'), async (req, res) => {
 });
 
 // Update equipment details
-app.put('/api/equipment/:id', upload.single('photo'), async (req, res) => {
+app.put('/api/equipment/:id', requirePermission('equipmentManage'), upload.single('photo'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -459,7 +803,7 @@ app.put('/api/equipment/:id', upload.single('photo'), async (req, res) => {
 });
 
 // Delete equipment
-app.delete('/api/equipment/:id', async (req, res) => {
+app.delete('/api/equipment/:id', requirePermission('equipmentManage'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -478,7 +822,7 @@ app.delete('/api/equipment/:id', async (req, res) => {
 });
 
 // Checkout equipment
-app.post('/api/equipment/:id/checkout', async (req, res) => {
+app.post('/api/equipment/:id/checkout', requirePermission('equipmentManage'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -525,7 +869,7 @@ app.post('/api/equipment/:id/checkout', async (req, res) => {
 });
 
 // Return equipment
-app.post('/api/equipment/:id/return', async (req, res) => {
+app.post('/api/equipment/:id/return', requirePermission('equipmentManage'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -569,7 +913,7 @@ app.post('/api/equipment/:id/return', async (req, res) => {
 });
 
 // Set equipment to maintenance
-app.post('/api/equipment/:id/maintenance', async (req, res) => {
+app.post('/api/equipment/:id/maintenance', requirePermission('equipmentManage'), async (req, res) => {
     await acquireWriteLock();
     try {
         const db = readDB();
@@ -610,7 +954,7 @@ app.post('/api/equipment/:id/maintenance', async (req, res) => {
 });
 
 // Get equipment logs
-app.get('/api/equipment/logs', (req, res) => {
+app.get('/api/equipment/logs', requirePermission('equipmentView'), (req, res) => {
     try {
         const db = readDB();
         res.json(db.equipmentLogs);
@@ -621,7 +965,7 @@ app.get('/api/equipment/logs', (req, res) => {
 //  API ROUTES — ANALYTICS
 // ============================================================
 
-app.get('/api/analytics/consumables', (req, res) => {
+app.get('/api/analytics/consumables', requirePermission('analyticsView'), (req, res) => {
     try {
         const db = readDB();
         const range = getReportDateRange(req.query);
@@ -720,7 +1064,7 @@ app.get('/api/analytics/consumables', (req, res) => {
 });
 
 // Equipment utilization analytics
-app.get('/api/analytics/equipment', (req, res) => {
+app.get('/api/analytics/equipment', requirePermission('analyticsView'), (req, res) => {
     try {
         const db = readDB();
         const hasDateFilter = req.query.startDate || req.query.endDate || req.query.month || req.query.year;

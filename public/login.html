@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="same-origin">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
+    <title>Sign in | PROXY Plus</title>
+    <style>
+        :root { color-scheme: light; font-family: Arial, sans-serif; color: #174b52; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1.25rem; background: #f1f7f7; }
+        body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: url("logo.png") center / min(78vw, 780px) no-repeat; opacity: .5; }
+        .card { position: relative; z-index: 1; width: min(30rem, 100%); padding: 1.75rem; border-radius: 1rem; background: rgba(255,255,255,.97); box-shadow: 0 12px 36px rgba(23,75,82,.12); }
+        .brand { display: flex; align-items: center; gap: .85rem; margin-bottom: 1.5rem; }
+        .brand img { width: 3.5rem; height: 3.5rem; object-fit: contain; }
+        h1, h2, p { margin-top: 0; }
+        h1 { margin-bottom: .2rem; font-size: 1.35rem; }
+        h2 { margin-bottom: .5rem; font-size: 1.1rem; }
+        .muted { color: #64748b; font-size: .9rem; }
+        .message { min-height: 1.25rem; color: #9a3412; font-size: .9rem; }
+        form[hidden], [hidden] { display: none !important; }
+        label { display: block; margin: 1rem 0; color: #334155; font-size: .9rem; }
+        input { display: block; width: 100%; margin-top: .35rem; padding: .7rem; border: 1px solid #cbd5e1; border-radius: .4rem; font: inherit; }
+        input:focus { outline: 2px solid rgba(7,138,147,.3); border-color: #078a93; }
+        button { width: 100%; margin-top: .5rem; padding: .75rem 1rem; border: 0; border-radius: .4rem; background: #078a93; color: white; font: inherit; font-weight: 600; cursor: pointer; }
+        button:hover { background: #066b73; }
+        .notice { color: #854d0e; font-size: .9rem; line-height: 1.5; }
+        footer { margin-top: 1.5rem; color: #64748b; text-align: center; font-size: .75rem; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
+    </style>
+    <script src="login.js" defer></script>
+</head>
+<body>
+    <main class="card">
+        <div class="brand">
+            <img src="logo.png" alt="">
+            <div>
+                <h1>PROXY Plus</h1>
+                <p class="muted">IT Inventory &amp; Equipment Tracker</p>
+            </div>
+        </div>
+        <p id="authMessage" class="message" role="status" aria-live="polite"></p>
+
+        <form id="ownerSetupForm" hidden>
+            <h2>Set up the owner account</h2>
+            <p class="notice">For security, first-time setup is only allowed in a browser on the server computer. This creates <strong>miczthemike</strong>.</p>
+            <label>Password (at least 12 characters)
+                <input type="password" name="password" minlength="12" maxlength="256" autocomplete="new-password" required>
+            </label>
+            <label>Confirm password
+                <input type="password" name="confirmPassword" minlength="12" maxlength="256" autocomplete="new-password" required>
+            </label>
+            <button type="submit">Create owner account</button>
+        </form>
+
+        <form id="loginForm" hidden>
+            <h2>Sign in</h2>
+            <label>Username
+                <input type="text" name="username" autocomplete="username" required>
+            </label>
+            <label>Password
+                <input type="password" name="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit">Sign in</button>
+        </form>
+
+        <form id="changePasswordForm" hidden>
+            <h2>Set your password</h2>
+            <p id="passwordChangeNotice" class="muted"></p>
+            <label id="currentPasswordGroup">Current password
+                <input type="password" name="currentPassword" autocomplete="current-password">
+            </label>
+            <label>New password (at least 12 characters)
+                <input type="password" name="newPassword" minlength="12" maxlength="256" autocomplete="new-password" required>
+            </label>
+            <label>Confirm new password
+                <input type="password" name="confirmPassword" minlength="12" maxlength="256" autocomplete="new-password" required>
+            </label>
+            <button type="submit">Save password</button>
+        </form>
+
+        <footer>
+            <p>&copy; 2026 PROXY Plus by The Oriental &bull; All Rights Reserved</p>
+            <p>System Architecture &amp; Fleet Operations by <a href="http://miczthemike.online">MicztheMike</a></p>
+        </footer>
+    </main>
+</body>
+</html>
