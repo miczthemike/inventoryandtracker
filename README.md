@@ -6,6 +6,7 @@ Web application for tracking consumable stock, requests, IT equipment deployment
 
 - Consumable inventory with photos, low-stock thresholds, and stock adjustments.
 - Consumable requests with requestor and department tracking.
+- Creator and processor attribution for consumable and equipment records, stock activity, requests, deployments, returns, and maintenance.
 - Equipment inventory, deployment and return history, due dates, maintenance, and status tracking.
 - Search, filtering, analytics, date-range reports, and CSV export.
 - Live updates for signed-in users connected to the same server.

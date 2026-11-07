@@ -393,6 +393,7 @@ function switchTab(tabName) {
 
 let allItems = [];
 let allRequests = [];
+let allStockLogs = [];
 
 async function fetchConsumableData() {
     const response = await fetch('/api/data');
@@ -404,10 +405,12 @@ async function fetchConsumableData() {
     if (!response.ok || !Array.isArray(data.items)) throw new Error(data.message || 'Failed to load consumables.');
     allItems = data.items;
     allRequests = data.requests;
+    allStockLogs = Array.isArray(data.stockLogs) ? data.stockLogs : [];
     updateFilterOptions('inventoryCategoryFilter', allItems.map(item => item.category));
     renderInventory();
     updateItemSelect(data.items);
     renderRequests();
+    renderStockActivity();
 }
 
 function updateFilterOptions(elementId, values) {
@@ -450,7 +453,7 @@ function updateInventoryTable(items) {
     const canManageStock = hasPermission('consumablesStockManage');
     tbody.innerHTML = '';
     if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${canManageStock ? 6 : 5}" class="border p-4 text-center text-gray-400">${allItems.length ? 'No consumables match your filters.' : 'No items yet. Add your first consumable above.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${canManageStock ? 7 : 6}" class="border p-4 text-center text-gray-400">${allItems.length ? 'No consumables match your filters.' : 'No items yet. Add your first consumable above.'}</td></tr>`;
         return;
     }
     items.forEach(item => {
@@ -467,6 +470,7 @@ function updateInventoryTable(items) {
                 <td class="border p-2 text-center">${photoHtml}</td>
                 <td class="border p-2">${escapeHtml(item.name)}</td>
                 <td class="border p-2">${escapeHtml(item.category)}</td>
+                <td class="border p-2">${escapeHtml(item.createdBy || 'Not recorded')}</td>
                 <td class="border p-2 text-center font-bold ${stockClass}">${item.quantity}</td>
                 <td class="border p-2 text-center">${stockStatus} <span class="text-xs text-gray-500">(${threshold})</span></td>
                 <td class="border p-2 text-center no-print ${canManageStock ? '' : 'hidden'}">
@@ -551,12 +555,12 @@ function updateItemSelect(items) {
 function renderRequests() {
     const query = document.getElementById('requestSearch').value.trim().toLowerCase();
     const requests = allRequests.filter(request =>
-        `${request.itemName} ${request.requestor} ${request.department}`.toLowerCase().includes(query)
+        `${request.itemName} ${request.requestor} ${request.department} ${request.processedBy || ''}`.toLowerCase().includes(query)
     );
     const tbody = document.getElementById('requestTableBody');
     tbody.innerHTML = '';
     if (requests.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="border p-4 text-center text-gray-400">${allRequests.length ? 'No requests match your search.' : 'No requests logged yet.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="border p-4 text-center text-gray-400">${allRequests.length ? 'No requests match your search.' : 'No requests logged yet.'}</td></tr>`;
         return;
     }
     requests.slice().reverse().forEach(req => {
@@ -567,8 +571,36 @@ function renderRequests() {
                 <td class="border p-2">${escapeHtml(req.requestor)}</td>
                 <td class="border p-2">${escapeHtml(req.department)}</td>
                 <td class="border p-2 text-center">${req.quantity}</td>
+                <td class="border p-2">${escapeHtml(req.processedBy || 'Not recorded')}</td>
             </tr>
         `;
+    });
+}
+
+function renderStockActivity() {
+    const tbody = document.getElementById('stockActivityTableBody');
+    tbody.innerHTML = '';
+    if (allStockLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="border p-4 text-center text-gray-400">No stock activity logged yet.</td></tr>';
+        return;
+    }
+
+    allStockLogs.slice().reverse().forEach(log => {
+        const actionLabels = {
+            'item-added': 'Item added',
+            restock: 'Restock',
+            adjustment: 'Stock adjustment',
+            threshold: 'Threshold updated',
+            issued: 'Consumable issued'
+        };
+        tbody.innerHTML += `<tr>
+            <td class="border p-2">${new Date(log.date).toLocaleString()}</td>
+            <td class="border p-2">${escapeHtml(log.itemName)}</td>
+            <td class="border p-2">${actionLabels[log.action] || escapeHtml(log.action)}</td>
+            <td class="border p-2 text-center">${Number(log.quantityChange) > 0 ? '+' : ''}${Number(log.quantityChange) || 0}</td>
+            <td class="border p-2">${escapeHtml(log.details || '')}</td>
+            <td class="border p-2">${escapeHtml(log.processedBy || 'Not recorded')}</td>
+        </tr>`;
     });
 }
 
@@ -677,7 +709,7 @@ function updateEquipmentTable(equipment) {
     const canManageEquipment = hasPermission('equipmentManage');
     tbody.innerHTML = '';
     if (equipment.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${canManageEquipment ? 10 : 9}" class="border p-4 text-center text-gray-400">${allEquipment.length ? 'No equipment matches your filters.' : 'No equipment registered yet.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${canManageEquipment ? 11 : 10}" class="border p-4 text-center text-gray-400">${allEquipment.length ? 'No equipment matches your filters.' : 'No equipment registered yet.'}</td></tr>`;
         return;
     }
     equipment.forEach(eq => {
@@ -712,6 +744,7 @@ function updateEquipmentTable(equipment) {
                 <td class="border p-2">${escapeHtml(eq.currentLocation)}</td>
                 <td class="border p-2 text-center">${borrowerInfo}</td>
                 <td class="border p-2 text-center">${conditionBadge}</td>
+                <td class="border p-2">${escapeHtml(eq.createdBy || 'Not recorded')}</td>
                 <td class="border p-2 text-center no-print ${canManageEquipment ? '' : 'hidden'}"><div class="flex flex-wrap justify-center gap-1">${actions}</div></td>
             </tr>
         `;
@@ -821,7 +854,7 @@ function renderEquipmentLogs() {
     const action = document.getElementById('activityActionFilter').value;
     const sort = document.getElementById('activitySort').value;
     const logs = allEquipmentLogs.filter(log => {
-        const text = `${log.equipmentName} ${log.borrower || ''} ${log.department || ''} ${log.location || ''} ${log.dueDate || ''} ${log.notes || ''}`.toLowerCase();
+        const text = `${log.equipmentName} ${log.borrower || ''} ${log.department || ''} ${log.location || ''} ${log.dueDate || ''} ${log.notes || ''} ${log.processedBy || ''}`.toLowerCase();
         return (!query || text.includes(query)) && (!action || log.action === action);
     }).sort((a, b) => sort === 'oldest'
         ? new Date(a.date) - new Date(b.date)
@@ -833,15 +866,19 @@ function updateEquipmentLogTable(logs) {
     const tbody = document.getElementById('equipmentLogBody');
     tbody.innerHTML = '';
     if (logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="border p-4 text-center text-gray-400">${allEquipmentLogs.length ? 'No activity matches your filters.' : 'No activity logged yet.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="border p-4 text-center text-gray-400">${allEquipmentLogs.length ? 'No activity matches your filters.' : 'No activity logged yet.'}</td></tr>`;
         return;
     }
     logs.forEach(log => {
-        const actionBadge = log.action === 'checkout'
-            ? '<span class="text-orange-600 font-semibold">📤 Deployment</span>'
-            : log.action === 'return'
-            ? '<span class="text-green-600 font-semibold">📥 Return</span>'
-            : '<span class="text-yellow-600 font-semibold">🔧 Maintenance</span>';
+        const actionLabels = {
+            checkout: '<span class="text-orange-600 font-semibold">📤 Deployment</span>',
+            return: '<span class="text-green-600 font-semibold">📥 Return</span>',
+            maintenance: '<span class="text-yellow-600 font-semibold">🔧 Maintenance</span>',
+            added: '<span class="text-blue-600 font-semibold">➕ Added</span>',
+            updated: '<span class="text-indigo-600 font-semibold">✏️ Updated</span>',
+            removed: '<span class="text-red-600 font-semibold">🗑 Removed</span>'
+        };
+        const actionBadge = actionLabels[log.action] || escapeHtml(log.action);
         tbody.innerHTML += `
             <tr>
                 <td class="border p-2">${new Date(log.date).toLocaleString()}</td>
@@ -852,6 +889,7 @@ function updateEquipmentLogTable(logs) {
                 <td class="border p-2">${escapeHtml(log.location || '—')}</td>
                 <td class="border p-2">${log.dueDate ? formatDateOnly(log.dueDate) : '—'}</td>
                 <td class="border p-2 text-gray-500 text-xs">${escapeHtml(log.notes || '')}</td>
+                <td class="border p-2">${escapeHtml(log.processedBy || 'Not recorded')}</td>
             </tr>
         `;
     });
@@ -1001,7 +1039,7 @@ async function generateReport({ silent = false } = {}) {
     } else {
         cData.byItem.forEach(i => {
             itemTbody.innerHTML += `<tr>
-                <td class="border p-2">${i.itemName}</td>
+                <td class="border p-2">${escapeHtml(i.itemName)}</td>
                 <td class="border p-2 text-center font-semibold">${i.totalQuantity}</td>
                 <td class="border p-2 text-center">${i.transactions}</td>
             </tr>`;
@@ -1012,14 +1050,15 @@ async function generateReport({ silent = false } = {}) {
     const requestorTbody = document.getElementById('rptRequestorTable');
     requestorTbody.innerHTML = '';
     if (cData.byRequestor.length === 0) {
-        requestorTbody.innerHTML = '<tr><td colspan="4" class="border p-3 text-center text-gray-400">No consumption this period.</td></tr>';
+        requestorTbody.innerHTML = '<tr><td colspan="5" class="border p-3 text-center text-gray-400">No consumption this period.</td></tr>';
     } else {
         cData.byRequestor.forEach(r => {
             requestorTbody.innerHTML += `<tr>
-                <td class="border p-2">${r.requestor}</td>
-                <td class="border p-2">${r.department}</td>
+                <td class="border p-2">${escapeHtml(r.requestor)}</td>
+                <td class="border p-2">${escapeHtml(r.department)}</td>
                 <td class="border p-2 text-center font-semibold">${r.totalQuantity}</td>
                 <td class="border p-2 text-center">${r.transactions}</td>
+                <td class="border p-2">${escapeHtml(r.processedBy || 'Not recorded')}</td>
             </tr>`;
         });
     }
@@ -1032,8 +1071,8 @@ async function generateReport({ silent = false } = {}) {
             : s.currentStock <= (s.lowStockThreshold ?? 5) ? '<span class="text-orange-500 font-semibold">Low Stock</span>'
             : '<span class="text-green-600">In Stock</span>';
         stockTbody.innerHTML += `<tr>
-            <td class="border p-2">${s.name}</td>
-            <td class="border p-2 text-center">${s.category}</td>
+            <td class="border p-2">${escapeHtml(s.name)}</td>
+            <td class="border p-2 text-center">${escapeHtml(s.category)}</td>
             <td class="border p-2 text-center font-bold">${s.currentStock}</td>
             <td class="border p-2 text-center">${statusLabel}</td>
         </tr>`;
@@ -1069,7 +1108,7 @@ function exportReportCsv() {
     if (!latestReportData) return alert('Generate a report before exporting.');
     const { cData, eData, startDate, endDate } = latestReportData;
     const rows = [
-        ['Record Type', 'Date', 'Item or Equipment', 'Requestor or Borrower', 'Department', 'Location', 'Due Date', 'Quantity', 'Notes']
+        ['Record Type', 'Date', 'Item or Equipment', 'Requestor or Borrower', 'Department', 'Location', 'Due Date', 'Quantity', 'Processed By', 'Notes']
     ];
     cData.transactions.forEach(transaction => rows.push([
         'Consumable request',
@@ -1080,6 +1119,7 @@ function exportReportCsv() {
         '',
         '',
         transaction.quantity,
+        transaction.processedBy,
         ''
     ]));
     eData.deployments.forEach(deployment => rows.push([
@@ -1091,6 +1131,7 @@ function exportReportCsv() {
         deployment.location,
         deployment.dueDate,
         '',
+        deployment.processedBy,
         deployment.notes
     ]));
 

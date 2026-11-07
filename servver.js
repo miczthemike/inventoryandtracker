@@ -123,7 +123,7 @@ function readDB() {
     }
 
     console.error('[DB] ✘ All recovery failed. Starting with empty database.');
-    const emptyData = { items: [], requests: [], equipment: [], equipmentLogs: [] };
+    const emptyData = { items: [], requests: [], equipment: [], equipmentLogs: [], stockLogs: [] };
     writeDB(emptyData);
     return emptyData;
 }
@@ -135,6 +135,7 @@ function migrateDB(data) {
     if (!Array.isArray(data.requests)) { data.requests = []; changed = true; }
     if (!Array.isArray(data.equipment)) { data.equipment = []; changed = true; }
     if (!Array.isArray(data.equipmentLogs)) { data.equipmentLogs = []; changed = true; }
+    if (!Array.isArray(data.stockLogs)) { data.stockLogs = []; changed = true; }
     data.items.forEach(item => {
         if (!Number.isInteger(item.lowStockThreshold) || item.lowStockThreshold < 0) {
             item.lowStockThreshold = 5;
@@ -643,9 +644,22 @@ app.post('/api/items', requirePermission('consumablesAdd'), upload.single('photo
             category: req.body.category.trim(),
             quantity,
             lowStockThreshold,
-            photo: req.file ? `/uploads/${req.file.filename}` : null
+            photo: req.file ? `/uploads/${req.file.filename}` : null,
+            createdBy: req.auth.username,
+            dateAdded: new Date().toISOString()
         };
         db.items.push(newItem);
+        db.stockLogs.push({
+            id: crypto.randomUUID(),
+            itemId: newItem.id,
+            itemName: newItem.name,
+            action: 'item-added',
+            quantityChange: quantity,
+            quantityAfter: quantity,
+            details: 'Consumable added to inventory',
+            processedBy: req.auth.username,
+            date: newItem.dateAdded
+        });
         writeDB(db);
         res.json({ success: true, item: newItem });
     } catch (err) {
@@ -671,8 +685,27 @@ app.post('/api/items/:id/adjust', requirePermission('consumablesStockManage'), a
             return res.status(400).json({ success: false, message: 'Stock adjustment must be a whole number that does not make stock negative; threshold must be a non-negative whole number.' });
         }
 
+        const quantityBefore = item.quantity;
+        const thresholdBefore = item.lowStockThreshold;
         item.quantity += adjustment;
         item.lowStockThreshold = threshold;
+        const changes = [];
+        if (adjustment !== 0) changes.push(`${adjustment > 0 ? '+' : ''}${adjustment} units`);
+        if (threshold !== thresholdBefore) changes.push(`low-stock threshold ${thresholdBefore} → ${threshold}`);
+        if (changes.length > 0) {
+            db.stockLogs.push({
+                id: crypto.randomUUID(),
+                itemId: item.id,
+                itemName: item.name,
+                action: adjustment > 0 ? 'restock' : adjustment < 0 ? 'adjustment' : 'threshold',
+                quantityChange: adjustment,
+                quantityBefore,
+                quantityAfter: item.quantity,
+                details: changes.join('; '),
+                processedBy: req.auth.username,
+                date: new Date().toISOString()
+            });
+        }
         writeDB(db);
         res.json({ success: true, item });
     } catch (err) {
@@ -698,13 +731,27 @@ app.post('/api/requests', requirePermission('consumablesRequest'), async (req, r
             return res.status(400).json({ success: false, message: 'Insufficient stock or item not found.' });
         }
         item.quantity -= quantity;
+        const processedAt = new Date().toISOString();
         const newRequest = {
             id: Date.now().toString(),
             itemId, itemName: item.name, requestor: requestor.trim(), department: department.trim(),
             quantity,
-            date: new Date().toISOString()
+            processedBy: req.auth.username,
+            date: processedAt
         };
         db.requests.push(newRequest);
+        db.stockLogs.push({
+            id: crypto.randomUUID(),
+            itemId: item.id,
+            itemName: item.name,
+            action: 'issued',
+            quantityChange: -quantity,
+            quantityBefore: item.quantity + quantity,
+            quantityAfter: item.quantity,
+            details: `${quantity} unit${quantity === 1 ? '' : 's'} issued to ${requestor.trim()} (${department.trim()})`,
+            processedBy: req.auth.username,
+            date: processedAt
+        });
         writeDB(db);
         res.json({ success: true, request: newRequest });
     } catch (err) {
@@ -745,9 +792,20 @@ app.post('/api/equipment', requirePermission('equipmentAdd'), upload.single('pho
             dateCheckedOut: null,
             dueDate: null,
             photo: req.file ? `/uploads/${req.file.filename}` : null,
-            dateAdded: new Date().toISOString()
+            dateAdded: new Date().toISOString(),
+            createdBy: req.auth.username
         };
         db.equipment.push(newEquipment);
+        db.equipmentLogs.push({
+            id: crypto.randomUUID(),
+            equipmentId: newEquipment.id,
+            equipmentName: newEquipment.name,
+            action: 'added',
+            location: newEquipment.homeLocation,
+            notes: 'Equipment added to inventory',
+            processedBy: req.auth.username,
+            date: newEquipment.dateAdded
+        });
         writeDB(db);
         res.json({ success: true, equipment: newEquipment });
     } catch (err) {
@@ -763,6 +821,7 @@ app.put('/api/equipment/:id', requirePermission('equipmentManage'), upload.singl
         const db = readDB();
         const eq = db.equipment.find(e => e.id === req.params.id);
         if (!eq) return res.status(404).json({ success: false, message: 'Equipment not found.' });
+        const equipmentName = eq.name;
 
         if (req.body.dueDate !== undefined &&
             (eq.status !== 'checked-out' || !isValidDateOnly(req.body.dueDate))) {
@@ -794,6 +853,19 @@ app.put('/api/equipment/:id', requirePermission('equipmentManage'), upload.singl
         }
         if (req.file) eq.photo = `/uploads/${req.file.filename}`;
 
+        db.equipmentLogs.push({
+            id: crypto.randomUUID(),
+            equipmentId: eq.id,
+            equipmentName: eq.name,
+            action: 'updated',
+            borrower: eq.borrower || '',
+            department: eq.department || '',
+            location: eq.currentLocation || eq.homeLocation,
+            dueDate: eq.dueDate || '',
+            notes: req.body.status === 'available' ? 'Maintenance cleared; marked available' : 'Equipment details updated',
+            processedBy: req.auth.username,
+            date: new Date().toISOString()
+        });
         writeDB(db);
         res.json({ success: true, equipment: eq });
     } catch (err) {
@@ -812,6 +884,17 @@ app.delete('/api/equipment/:id', requirePermission('equipmentManage'), async (re
         if (db.equipment[idx].status === 'checked-out') {
             return res.status(400).json({ success: false, message: 'Deployed equipment must be returned before it can be removed.' });
         }
+        const removedEquipment = db.equipment[idx];
+        db.equipmentLogs.push({
+            id: crypto.randomUUID(),
+            equipmentId: removedEquipment.id,
+            equipmentName: removedEquipment.name,
+            action: 'removed',
+            location: removedEquipment.currentLocation || removedEquipment.homeLocation,
+            notes: 'Equipment removed from inventory',
+            processedBy: req.auth.username,
+            date: new Date().toISOString()
+        });
         db.equipment.splice(idx, 1);
         writeDB(db);
         res.json({ success: true });
@@ -857,6 +940,7 @@ app.post('/api/equipment/:id/checkout', requirePermission('equipmentManage'), as
             location: eventHall.trim(),
             dueDate,
             notes: notes || '',
+            processedBy: req.auth.username,
             date: new Date().toISOString()
         };
         db.equipmentLogs.push(log);
@@ -891,6 +975,7 @@ app.post('/api/equipment/:id/return', requirePermission('equipmentManage'), asyn
             location: 'IT Room',
             dueDate,
             notes: notes || '',
+            processedBy: req.auth.username,
             date: new Date().toISOString()
         };
         db.equipmentLogs.push(log);
@@ -936,6 +1021,7 @@ app.post('/api/equipment/:id/maintenance', requirePermission('equipmentManage'),
             department: eq.department || '',
             location: 'Maintenance',
             notes: notes || '',
+            processedBy: req.auth.username,
             date: new Date().toISOString()
         };
         db.equipmentLogs.push(log);
@@ -1002,9 +1088,10 @@ app.get('/api/analytics/consumables', requirePermission('analyticsView'), (req, 
         filtered.forEach(r => {
             const requestor = r.requestor || 'Not recorded';
             const department = r.department || 'Not recorded';
-            const key = JSON.stringify([requestor, department]);
+            const processedBy = r.processedBy || 'Not recorded';
+            const key = JSON.stringify([requestor, department, processedBy]);
             if (!byRequestorMap.has(key)) {
-                byRequestorMap.set(key, { requestor, department, totalQuantity: 0, transactions: 0 });
+                byRequestorMap.set(key, { requestor, department, processedBy, totalQuantity: 0, transactions: 0 });
             }
             const entry = byRequestorMap.get(key);
             entry.totalQuantity += r.quantity;
@@ -1054,6 +1141,7 @@ app.get('/api/analytics/consumables', requirePermission('analyticsView'), (req, 
                 itemName: r.itemName,
                 requestor: r.requestor || '',
                 department: r.department || '',
+                processedBy: r.processedBy || '',
                 quantity: r.quantity
             }))
         });
@@ -1099,7 +1187,8 @@ app.get('/api/analytics/equipment', requirePermission('analyticsView'), (req, re
                 department: log.department || '',
                 location: log.location || '',
                 dueDate: log.dueDate || '',
-                notes: log.notes || ''
+                notes: log.notes || '',
+                processedBy: log.processedBy || ''
             }));
 
         // By location/event hall

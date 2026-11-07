@@ -258,6 +258,7 @@
                                 <th class="border p-2">Photo</th>
                                 <th class="border p-2">Name</th>
                                 <th class="border p-2">Category</th>
+                                <th class="border p-2">Added By</th>
                                 <th class="border p-2">In Stock</th>
                                 <th class="border p-2">Stock Status</th>
                                 <th class="border p-2 no-print">Stock Actions</th>
@@ -283,9 +284,27 @@
                                 <th class="border p-2">Requestor</th>
                                 <th class="border p-2">Department</th>
                                 <th class="border p-2">Qty</th>
+                                <th class="border p-2">Processed By</th>
                             </tr>
                         </thead>
                         <tbody id="requestTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Consumable Stock Activity</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-200 text-sm">
+                        <thead><tr class="bg-gray-100">
+                            <th class="border p-2">Date</th>
+                            <th class="border p-2">Item</th>
+                            <th class="border p-2">Action</th>
+                            <th class="border p-2">Quantity Change</th>
+                            <th class="border p-2">Details</th>
+                            <th class="border p-2">Processed By</th>
+                        </tr></thead>
+                        <tbody id="stockActivityTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -433,6 +452,7 @@
                                 <th class="border p-2">Current Location</th>
                                 <th class="border p-2">Borrower</th>
                                 <th class="border p-2">Condition</th>
+                                <th class="border p-2">Added By</th>
                                 <th class="border p-2 no-print">Actions</th>
                             </tr>
                         </thead>
@@ -451,6 +471,9 @@
                         <option value="checkout">Deployments</option>
                         <option value="return">Returns</option>
                         <option value="maintenance">Maintenance</option>
+                        <option value="added">Added</option>
+                        <option value="updated">Updated</option>
+                        <option value="removed">Removed</option>
                     </select>
                     <select id="activitySort" aria-label="Sort activity" class="border rounded p-2">
                         <option value="newest">Sort: Newest first</option>
@@ -469,6 +492,7 @@
                                 <th class="border p-2">Location</th>
                                 <th class="border p-2">Due Date</th>
                                 <th class="border p-2">Notes</th>
+                                <th class="border p-2">Processed By</th>
                             </tr>
                         </thead>
                         <tbody id="equipmentLogBody"></tbody>
@@ -582,6 +606,7 @@
                                     <th class="border p-2 text-left">Department</th>
                                     <th class="border p-2 text-center">Qty Consumed</th>
                                     <th class="border p-2 text-center">Transactions</th>
+                                    <th class="border p-2 text-left">Processed By</th>
                                 </tr></thead>
                                 <tbody id="rptRequestorTable"></tbody>
                             </table>

@@ -18,6 +18,8 @@ Passwords are stored as salted scrypt hashes in `users.json`; the original passw
 
 New users receive a generated temporary password shown only once in User Management. Give it to the user securely; the account is required to set a new password at first sign-in. Users can change their own passwords while signed in.
 
+Inventory creation, stock activity, item requests, and equipment activity record the signed-in username on the server. Legacy records created before this audit tracking was added display as "Not recorded".
+
 ## Network deployment
 
 The app's built-in server uses HTTP by default. Before allowing sign-ins from other PCs, put it behind HTTPS so passwords and session cookies are protected in transit. If a trusted HTTPS reverse proxy forwards requests to Node, start the app with `TRUST_PROXY=true`; do not enable this unless requests can only reach Node through that trusted proxy. The session cookie is HTTP-only and uses the `Secure` attribute when Express detects HTTPS.
