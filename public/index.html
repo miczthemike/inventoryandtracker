@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROXY Plus | IT Inventory &amp; Equipment Tracker</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --brand-primary: #078a93;
+            --brand-primary-dark: #066b73;
+            --brand-light: #e6f7f7;
+            --brand-ink: #174b52;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            isolation: isolate;
+            background-color: #f1f7f7;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: url("logo.png") center / min(78vw, 780px) no-repeat;
+            opacity: 0.5;
+        }
+        .tab-btn.active { border-color: var(--brand-primary); color: var(--brand-primary-dark); background: var(--brand-light); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .status-available { background: #dcfce7; color: #166534; }
+        .status-checked-out { background: #fee2e2; color: #991b1b; }
+        .status-maintenance { background: #fef9c3; color: #854d0e; }
+        .site-main { flex: 1; position: relative; z-index: 1; }
+        .brand-header {
+            border-top: 4px solid var(--brand-primary);
+            background: linear-gradient(120deg, rgba(255,255,255,.97), rgba(230,247,247,.94));
+        }
+        .brand-name { color: var(--brand-ink); }
+        .live-update-status { color: #64748b; }
+        .live-update-status.connected { color: #047857; }
+        .live-update-status.disconnected { color: #b45309; }
+        .equipment-form-toggle {
+            align-self: start;
+            overflow: hidden;
+        }
+        .equipment-form-toggle > button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            width: 100%;
+            padding: .875rem 1rem;
+            border: 0;
+            background: white;
+            color: var(--brand-ink);
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: background-color .2s ease;
+        }
+        .equipment-form-toggle > button:hover { background: var(--brand-light); }
+        .equipment-form-toggle > button::after {
+            content: "+";
+            color: var(--brand-primary);
+            font-size: 1.25rem;
+            line-height: 1;
+            transition: transform .2s ease;
+        }
+        .equipment-form-toggle > button[aria-expanded="true"]::after {
+            content: "\2212";
+            transform: rotate(180deg);
+        }
+        .equipment-form-toggle > button:focus-visible {
+            outline: 2px solid var(--brand-primary);
+            outline-offset: -2px;
+            border-radius: .5rem;
+        }
+        .equipment-form-panel {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-.35rem);
+            transition: max-height .3s ease, opacity .2s ease, transform .2s ease;
+        }
+        .equipment-form-panel > form { padding: 0 1rem 1rem; }
+        .equipment-form-panel[aria-hidden="false"] {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .equipment-form-toggle > button,
+            .equipment-form-toggle > button::after,
+            .equipment-form-panel { transition: none; }
+        }
+        button[type="submit"],
+        #content-analytics button[onclick="generateReport()"] {
+            background-color: var(--brand-primary);
+        }
+        button[type="submit"]:hover,
+        #content-analytics button[onclick="generateReport()"]:hover {
+            background-color: var(--brand-primary-dark);
+        }
+        input:focus, select:focus {
+            outline: 2px solid rgba(7,138,147,.28);
+            border-color: var(--brand-primary);
+        }
+        .brand-footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid #c9e2e3;
+            background: rgba(255,255,255,.9);
+            color: #45666a;
+        }
+        .equipment-editor {
+            width: min(36rem, calc(100% - 2rem));
+            max-width: 100%;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+            body::before { display: none; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="font-sans leading-normal tracking-normal">
+
+    <main class="site-main container mx-auto w-full p-4 md:p-6">
+        <header class="brand-header flex flex-col sm:flex-row items-center gap-4 rounded-xl p-5 mb-6 shadow-sm">
+            <img src="logo.png" alt="PROXY Plus logo" class="h-20 w-20 object-contain">
+            <div class="text-center sm:text-left">
+                <p class="brand-name text-2xl font-extrabold tracking-wide">PROXY Plus by The Oriental</p>
+                <h1 class="mt-1 text-lg font-semibold text-gray-700">IT Inventory &amp; Equipment Tracker</h1>
+                <p class="text-gray-500 text-sm">Consumables, Equipment Tracking &amp; Analytics</p>
+            </div>
+            <p id="liveUpdateStatus" class="live-update-status text-xs sm:ml-auto" role="status" aria-live="polite">Connecting to live updates…</p>
+        </header>
+
+        <!-- ======== TAB NAVIGATION ======== -->
+        <div class="flex flex-wrap border-b mb-6 no-print">
+            <button onclick="switchTab('consumables')" id="tab-consumables" class="tab-btn active px-5 py-3 border-b-2 font-semibold text-sm transition-colors">
+                📦 Consumables
+            </button>
+            <button onclick="switchTab('equipment')" id="tab-equipment" class="tab-btn px-5 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                🖥️ IT Equipment
+            </button>
+            <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn px-5 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                📊 Analytics &amp; Reports
+            </button>
+        </div>
+
+        <!-- ================================================================ -->
+        <!--  TAB 1: CONSUMABLES                                              -->
+        <!-- ================================================================ -->
+        <div id="content-consumables" class="tab-content active">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Add Item -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Add New Item / Consumable</h2>
+                    <form id="addItemForm" enctype="multipart/form-data" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-600 text-sm">Item Name:</label>
+                            <input type="text" name="name" required class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Category (e.g., Toner, Battery):</label>
+                            <input type="text" name="category" required class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Initial Quantity:</label>
+                            <input type="number" name="quantity" required min="0" class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Low-stock alert threshold:</label>
+                            <input type="number" name="lowStockThreshold" value="5" required min="0" class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Reference Photo:</label>
+                            <input type="file" name="photo" accept="image/*" class="w-full border rounded p-2">
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Add Item</button>
+                    </form>
+                </div>
+
+                <!-- Checkout / Request -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Checkout / Request Item</h2>
+                    <form id="requestForm" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-600 text-sm">Select Item:</label>
+                            <select id="itemSelect" name="itemId" required class="w-full border rounded p-2"></select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Requestor Name:</label>
+                            <input type="text" name="requestor" required class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Department:</label>
+                            <input type="text" name="department" required class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Quantity:</label>
+                            <input type="number" name="quantityRequested" value="1" min="1" required class="w-full border rounded p-2">
+                        </div>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm">Submit Request</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Inventory Table -->
+            <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Current Inventory Status</h2>
+                <p id="inventoryAlertSummary" class="mb-3 text-sm text-gray-600" aria-live="polite"></p>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4 no-print">
+                    <input id="inventorySearch" type="search" placeholder="Search name or category" aria-label="Search consumables" class="border rounded p-2">
+                    <select id="inventoryCategoryFilter" aria-label="Filter by category" class="border rounded p-2">
+                        <option value="">All categories</option>
+                    </select>
+                    <select id="inventoryStockFilter" aria-label="Filter by stock status" class="border rounded p-2">
+                        <option value="all">All stock levels</option>
+                        <option value="low">Low stock</option>
+                        <option value="out">Out of stock</option>
+                    </select>
+                    <select id="inventorySort" aria-label="Sort consumables" class="border rounded p-2">
+                        <option value="name">Sort: Name</option>
+                        <option value="category">Sort: Category</option>
+                        <option value="quantity-asc">Sort: Quantity (low to high)</option>
+                        <option value="quantity-desc">Sort: Quantity (high to low)</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-200 text-sm">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border p-2">Photo</th>
+                                <th class="border p-2">Name</th>
+                                <th class="border p-2">Category</th>
+                                <th class="border p-2">In Stock</th>
+                                <th class="border p-2">Stock Status</th>
+                                <th class="border p-2 no-print">Stock Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Request History -->
+            <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Request History</h2>
+                <div class="mb-4 no-print">
+                    <input id="requestSearch" type="search" placeholder="Search item, requestor, or department" aria-label="Search request history" class="w-full md:w-1/2 border rounded p-2">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-200 text-sm">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border p-2">Date</th>
+                                <th class="border p-2">Item</th>
+                                <th class="border p-2">Requestor</th>
+                                <th class="border p-2">Department</th>
+                                <th class="border p-2">Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!--  TAB 2: IT EQUIPMENT                                             -->
+        <!-- ================================================================ -->
+        <div id="content-equipment" class="tab-content">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 items-start gap-3 mb-8">
+                <!-- Add Equipment -->
+                <div class="equipment-form-toggle bg-white rounded-lg shadow-md">
+                    <button type="button" aria-expanded="false" aria-controls="addEquipmentPanel">Add New Equipment</button>
+                    <div id="addEquipmentPanel" class="equipment-form-panel" aria-hidden="true" inert>
+                        <form id="addEquipmentForm" enctype="multipart/form-data" class="space-y-3">
+                        <div>
+                            <label class="block text-gray-600 text-sm">Equipment Name:</label>
+                            <input type="text" name="name" required placeholder="e.g., Epson Projector EB-X51" class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Category:</label>
+                            <input type="text" name="category" required placeholder="e.g., Projector, HDMI Cable" class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Serial Number:</label>
+                            <input type="text" name="serialNumber" placeholder="Optional" class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Storage Location:</label>
+                            <input type="text" name="homeLocation" value="IT Storage Room" class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Condition:</label>
+                            <select name="condition" class="w-full border rounded p-2">
+                                <option value="good">Good</option>
+                                <option value="fair">Fair</option>
+                                <option value="needs-repair">Needs Repair</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm">Photo:</label>
+                            <input type="file" name="photo" accept="image/*" class="w-full border rounded p-2">
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Add Equipment</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Deploy Equipment -->
+                <div class="equipment-form-toggle bg-white rounded-lg shadow-md">
+                    <button type="button" aria-expanded="false" aria-controls="checkoutEquipmentPanel">Deploy Equipment</button>
+                    <div id="checkoutEquipmentPanel" class="equipment-form-panel" aria-hidden="true" inert>
+                        <form id="checkoutEquipmentForm" class="space-y-3">
+                            <div>
+                                <label class="block text-gray-600 text-sm">Select Equipment:</label>
+                                <select id="eqCheckoutSelect" name="equipmentId" required class="w-full border rounded p-2"></select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 text-sm">Borrower Name:</label>
+                                <input type="text" name="borrower" required class="w-full border rounded p-2">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 text-sm">Department:</label>
+                                <input type="text" name="department" required class="w-full border rounded p-2">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 text-sm">Event Hall / Location:</label>
+                                <input type="text" name="eventHall" required placeholder="e.g., Event Hall A, Conference Room 2" class="w-full border rounded p-2">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 text-sm">Expected Return Date:</label>
+                                <input type="date" name="dueDate" required class="w-full border rounded p-2">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 text-sm">Notes:</label>
+                                <input type="text" name="notes" placeholder="Optional" class="w-full border rounded p-2">
+                            </div>
+                        <button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 text-sm w-full">Deploy</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Return Equipment -->
+                <div class="equipment-form-toggle bg-white rounded-lg shadow-md">
+                    <button type="button" aria-expanded="false" aria-controls="returnEquipmentPanel">Return Equipment</button>
+                    <div id="returnEquipmentPanel" class="equipment-form-panel" aria-hidden="true" inert>
+                        <form id="returnEquipmentForm" class="space-y-3">
+                            <div>
+                                <label class="block text-gray-600 text-sm">Select Equipment:</label>
+                                <select id="eqReturnSelect" name="equipmentId" required class="w-full border rounded p-2"></select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 text-sm">Condition on Return:</label>
+                                <select name="condition" class="w-full border rounded p-2">
+                                    <option value="good">Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="needs-repair">Needs Repair</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 text-sm">Notes:</label>
+                                <input type="text" name="notes" placeholder="Optional" class="w-full border rounded p-2">
+                            </div>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm w-full">Return</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Status Table -->
+            <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Equipment Status Board</h2>
+                <!-- Status summary badges -->
+                <div id="eqStatusSummary" class="flex flex-wrap gap-3 mb-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4 no-print">
+                    <input id="equipmentSearch" type="search" placeholder="Search equipment, serial, borrower, location" aria-label="Search equipment" class="border rounded p-2">
+                    <select id="equipmentCategoryFilter" aria-label="Filter equipment by category" class="border rounded p-2">
+                        <option value="">All categories</option>
+                    </select>
+                    <select id="equipmentStatusFilter" aria-label="Filter equipment by status" class="border rounded p-2">
+                        <option value="">All statuses</option>
+                        <option value="available">Available</option>
+                        <option value="checked-out">Deployed</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                    <select id="equipmentSort" aria-label="Sort equipment" class="border rounded p-2">
+                        <option value="name">Sort: Name</option>
+                        <option value="category">Sort: Category</option>
+                        <option value="dueDate">Sort: Due date</option>
+                        <option value="location">Sort: Location</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-200 text-sm">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border p-2">Photo</th>
+                                <th class="border p-2">Name</th>
+                                <th class="border p-2">Category</th>
+                                <th class="border p-2">Serial #</th>
+                                <th class="border p-2">Status</th>
+                                <th class="border p-2">Due Date</th>
+                                <th class="border p-2">Current Location</th>
+                                <th class="border p-2">Borrower</th>
+                                <th class="border p-2">Condition</th>
+                                <th class="border p-2 no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="equipmentTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Equipment Activity Log -->
+            <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Equipment Activity Log</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 no-print">
+                    <input id="activitySearch" type="search" placeholder="Search equipment, borrower, department, location" aria-label="Search equipment activity" class="border rounded p-2">
+                    <select id="activityActionFilter" aria-label="Filter activity action" class="border rounded p-2">
+                        <option value="">All activity</option>
+                        <option value="checkout">Deployments</option>
+                        <option value="return">Returns</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                    <select id="activitySort" aria-label="Sort activity" class="border rounded p-2">
+                        <option value="newest">Sort: Newest first</option>
+                        <option value="oldest">Sort: Oldest first</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-200 text-sm">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border p-2">Date</th>
+                                <th class="border p-2">Equipment</th>
+                                <th class="border p-2">Action</th>
+                                <th class="border p-2">Borrower</th>
+                                <th class="border p-2">Department</th>
+                                <th class="border p-2">Location</th>
+                                <th class="border p-2">Due Date</th>
+                                <th class="border p-2">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="equipmentLogBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <!--  TAB 3: ANALYTICS & REPORTS                                      -->
+        <!-- ================================================================ -->
+        <div id="content-analytics" class="tab-content">
+
+            <!-- Print Header (only visible when printing) -->
+            <div class="print-only mb-6">
+                <h1 class="text-2xl font-bold">IT Inventory Report</h1>
+                <p id="printPeriod" class="text-gray-600"></p>
+                <p class="text-gray-400 text-sm">Generated: <span id="printDate"></span></p>
+                <hr class="mt-2">
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6 no-print">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Generate Inventory Report</h2>
+                <div class="flex flex-wrap items-end gap-4">
+                    <div>
+                        <label class="block text-gray-600 text-sm">From:</label>
+                        <input type="date" id="reportStartDate" required class="border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-sm">To:</label>
+                        <input type="date" id="reportEndDate" required class="border rounded p-2">
+                    </div>
+                    <button id="generateReportButton" onclick="generateReport()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 text-sm">
+                        Generate Report
+                    </button>
+                    <button id="exportReportButton" onclick="exportReportCsv()" disabled class="bg-teal-700 text-white px-6 py-2 rounded hover:bg-teal-800 text-sm disabled:opacity-50">
+                        Export CSV
+                    </button>
+                    <button onclick="window.print()" class="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 text-sm">
+                        🖨️ Print Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Content (populated by JS) -->
+            <div id="reportContent" class="hidden">
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow text-center">
+                        <p class="text-gray-500 text-sm">Total Transactions</p>
+                        <p id="rptTotalTx" class="text-3xl font-bold text-blue-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow text-center">
+                        <p class="text-gray-500 text-sm">Total Items Consumed</p>
+                        <p id="rptTotalQty" class="text-3xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow text-center">
+                        <p class="text-gray-500 text-sm">Top Item</p>
+                        <p id="rptTopItem" class="text-lg font-bold text-orange-600 truncate">—</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow text-center">
+                        <p class="text-gray-500 text-sm">Top Department</p>
+                        <p id="rptTopDept" class="text-lg font-bold text-purple-600 truncate">—</p>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Consumption by Item</h3>
+                        <canvas id="chartByItem"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Consumption by Department</h3>
+                        <canvas id="chartByDept"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Daily Consumption Trend</h3>
+                        <canvas id="chartDaily"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">By Category</h3>
+                        <canvas id="chartByCategory"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detailed Tables -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Breakdown by Item</h3>
+                        <table class="w-full border-collapse border border-gray-200 text-sm">
+                            <thead><tr class="bg-gray-100">
+                                <th class="border p-2 text-left">Item</th>
+                                <th class="border p-2 text-center">Qty Consumed</th>
+                                <th class="border p-2 text-center">Transactions</th>
+                            </tr></thead>
+                            <tbody id="rptItemTable"></tbody>
+                        </table>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Breakdown by Requestor</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse border border-gray-200 text-sm">
+                                <thead><tr class="bg-gray-100">
+                                    <th class="border p-2 text-left">Requestor</th>
+                                    <th class="border p-2 text-left">Department</th>
+                                    <th class="border p-2 text-center">Qty Consumed</th>
+                                    <th class="border p-2 text-center">Transactions</th>
+                                </tr></thead>
+                                <tbody id="rptRequestorTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Stock Snapshot -->
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-700">Current Stock Snapshot</h3>
+                    <table class="w-full border-collapse border border-gray-200 text-sm">
+                        <thead><tr class="bg-gray-100">
+                            <th class="border p-2 text-left">Item</th>
+                            <th class="border p-2">Category</th>
+                            <th class="border p-2">Current Stock</th>
+                            <th class="border p-2">Status</th>
+                        </tr></thead>
+                        <tbody id="rptStockTable"></tbody>
+                    </table>
+                </div>
+
+                <!-- Equipment Summary -->
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-700">Equipment Utilization Summary</h3>
+                    <div id="eqAnalyticsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"></div>
+                    <table class="w-full border-collapse border border-gray-200 text-sm">
+                        <thead><tr class="bg-gray-100">
+                            <th class="border p-2 text-left">Equipment</th>
+                            <th class="border p-2 text-center">Deployments</th>
+                        </tr></thead>
+                        <tbody id="rptEqUsageTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="reportEmpty" class="text-center py-16 text-gray-400">
+                <p class="text-5xl mb-4">📊</p>
+                <p>Select a date range, then click <strong>Generate Report</strong>.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <dialog id="editEquipmentDialog" class="equipment-editor rounded-xl p-0 shadow-2xl backdrop:bg-gray-900/50">
+        <form id="editEquipmentForm" enctype="multipart/form-data" class="space-y-4 p-6">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="text-xl font-semibold text-gray-800">Edit Equipment</h2>
+                <button type="button" onclick="closeEquipmentEditor()" aria-label="Close equipment editor" class="rounded px-2 py-1 text-gray-500 hover:bg-gray-100">✕</button>
+            </div>
+            <input type="hidden" name="equipmentId">
+            <div>
+                <label class="block text-gray-600 text-sm">Equipment Name:</label>
+                <input type="text" name="name" required class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm">Category:</label>
+                <input type="text" name="category" required class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm">Serial Number:</label>
+                <input type="text" name="serialNumber" class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm">Home Location:</label>
+                <input type="text" name="homeLocation" required class="w-full border rounded p-2">
+            </div>
+            <div id="editDueDateField" class="hidden">
+                <label class="block text-gray-600 text-sm">Expected Return Date:</label>
+                <input type="date" name="dueDate" class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm">Condition:</label>
+                <select name="condition" class="w-full border rounded p-2">
+                    <option value="good">Good</option>
+                    <option value="fair">Fair</option>
+                    <option value="needs-repair">Needs Repair</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-600 text-sm">Replace Photo:</label>
+                <input type="file" name="photo" accept="image/*" class="w-full border rounded p-2">
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeEquipmentEditor()" class="rounded border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="rounded bg-teal-700 px-4 py-2 text-sm text-white hover:bg-teal-800">Save Changes</button>
+            </div>
+        </form>
+    </dialog>
+
+    <footer class="brand-footer px-4 py-5 text-center text-xs sm:text-sm">
+        <p>&copy; 2026 PROXY Plus by The Oriental &bull; All Rights Reserved</p>
+        <p class="mt-1">Designed and Developed by <a href="http://miczthemike.online" class="font-medium text-teal-700 hover:text-teal-900 hover:underline">MicztheMike</a></p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

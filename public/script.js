@@ -1,0 +1,890 @@
+// ============================================================
+//  INITIALIZATION
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const now = new Date();
+    const today = toDateInputValue(now);
+    document.getElementById('reportStartDate').value = `${today.slice(0, 7)}-01`;
+    document.getElementById('reportEndDate').value = today;
+    document.querySelector('[name="dueDate"]').min = today;
+
+    document.getElementById('content-equipment').addEventListener('click', (event) => {
+        const button = event.target.closest('.equipment-form-toggle > button');
+        if (button) toggleEquipmentForm(button);
+    });
+    document.getElementById('equipmentTableBody').addEventListener('click', handleEquipmentAction);
+    document.getElementById('inventoryTableBody').addEventListener('click', handleStockAction);
+
+    [
+        ['inventorySearch', renderInventory],
+        ['inventoryCategoryFilter', renderInventory],
+        ['inventoryStockFilter', renderInventory],
+        ['inventorySort', renderInventory],
+        ['requestSearch', renderRequests],
+        ['equipmentSearch', renderEquipment],
+        ['equipmentCategoryFilter', renderEquipment],
+        ['equipmentStatusFilter', renderEquipment],
+        ['equipmentSort', renderEquipment],
+        ['activitySearch', renderEquipmentLogs],
+        ['activityActionFilter', renderEquipmentLogs],
+        ['activitySort', renderEquipmentLogs]
+    ].forEach(([id, handler]) => {
+        document.getElementById(id).addEventListener('input', handler);
+        document.getElementById(id).addEventListener('change', handler);
+    });
+
+    document.getElementById('editEquipmentForm').addEventListener('submit', saveEquipmentEdits);
+    ['reportStartDate', 'reportEndDate'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+            latestReportData = null;
+            document.getElementById('exportReportButton').disabled = true;
+        });
+    });
+
+    document.querySelectorAll('.equipment-form-panel').forEach(panel => {
+        panel.addEventListener('transitionend', (event) => {
+            if (event.propertyName === 'max-height' && panel.getAttribute('aria-hidden') === 'false') {
+                panel.style.maxHeight = 'none';
+            }
+        });
+    });
+
+    connectLiveUpdates();
+});
+
+function connectLiveUpdates() {
+    if (!window.EventSource) {
+        setLiveUpdateStatus('Live updates are not supported by this browser.', 'disconnected');
+        refreshSharedData();
+        return;
+    }
+
+    const events = new EventSource('/api/events');
+    events.addEventListener('connected', () => {
+        setLiveUpdateStatus('Live updates connected', 'connected');
+        refreshSharedData();
+    });
+    events.addEventListener('data-updated', refreshSharedData);
+    events.onerror = () => setLiveUpdateStatus('Reconnecting to live updates…', 'disconnected');
+}
+
+function setLiveUpdateStatus(message, state) {
+    const status = document.getElementById('liveUpdateStatus');
+    status.textContent = message;
+    status.classList.toggle('connected', state === 'connected');
+    status.classList.toggle('disconnected', state === 'disconnected');
+}
+
+async function refreshSharedData() {
+    const results = await Promise.allSettled([fetchConsumableData(), fetchEquipmentData()]);
+    const failed = results.find(result => result.status === 'rejected');
+    if (failed) {
+        console.error('[Live updates] Failed to refresh shared data:', failed.reason);
+        setLiveUpdateStatus('Connected, but some data could not be refreshed.', 'disconnected');
+        return;
+    }
+
+    if (latestReportData) await generateReport({ silent: true });
+}
+
+function toDateInputValue(date) {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 10);
+}
+
+function toggleEquipmentForm(button) {
+    const panel = document.getElementById(button.getAttribute('aria-controls'));
+    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+    button.setAttribute('aria-expanded', String(!isExpanded));
+    panel.setAttribute('aria-hidden', String(isExpanded));
+    panel.inert = isExpanded;
+
+    if (isExpanded) {
+        panel.style.maxHeight = `${panel.getBoundingClientRect().height}px`;
+        panel.offsetHeight;
+        panel.style.maxHeight = '0px';
+        return;
+    }
+
+    panel.style.maxHeight = '0px';
+    panel.offsetHeight;
+    panel.style.maxHeight = `${panel.scrollHeight}px`;
+}
+
+// ============================================================
+//  TAB SWITCHING
+// ============================================================
+
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.getElementById('content-' + tabName).classList.add('active');
+}
+
+// ============================================================
+//  CONSUMABLES
+// ============================================================
+
+let allItems = [];
+let allRequests = [];
+
+async function fetchConsumableData() {
+    const response = await fetch('/api/data');
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data.items)) throw new Error(data.message || 'Failed to load consumables.');
+    allItems = data.items;
+    allRequests = data.requests;
+    updateFilterOptions('inventoryCategoryFilter', allItems.map(item => item.category));
+    renderInventory();
+    updateItemSelect(data.items);
+    renderRequests();
+}
+
+function updateFilterOptions(elementId, values) {
+    const select = document.getElementById(elementId);
+    const selected = select.value;
+    const firstOption = select.options[0].outerHTML;
+    const options = [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    select.innerHTML = firstOption + options.map(value =>
+        `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`
+    ).join('');
+    if (options.includes(selected)) select.value = selected;
+}
+
+function renderInventory() {
+    const lowStockCount = allItems.filter(item => item.quantity <= (item.lowStockThreshold ?? 5)).length;
+    document.getElementById('inventoryAlertSummary').textContent = lowStockCount
+        ? `${lowStockCount} item${lowStockCount === 1 ? '' : 's'} at or below the low-stock threshold.`
+        : 'All items are above their low-stock thresholds.';
+    const query = document.getElementById('inventorySearch').value.trim().toLowerCase();
+    const category = document.getElementById('inventoryCategoryFilter').value;
+    const stockFilter = document.getElementById('inventoryStockFilter').value;
+    const sort = document.getElementById('inventorySort').value;
+    const items = allItems.filter(item => {
+        const lowStock = item.quantity > 0 && item.quantity <= (item.lowStockThreshold ?? 5);
+        return (!query || `${item.name} ${item.category}`.toLowerCase().includes(query)) &&
+            (!category || item.category === category) &&
+            (stockFilter === 'all' || (stockFilter === 'low' && lowStock) ||
+                (stockFilter === 'out' && item.quantity === 0));
+    }).sort((a, b) => {
+        if (sort === 'quantity-asc') return a.quantity - b.quantity;
+        if (sort === 'quantity-desc') return b.quantity - a.quantity;
+        if (sort === 'category') return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
+        return a.name.localeCompare(b.name);
+    });
+    updateInventoryTable(items);
+}
+
+function updateInventoryTable(items) {
+    const tbody = document.getElementById('inventoryTableBody');
+    tbody.innerHTML = '';
+    if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="border p-4 text-center text-gray-400">${allItems.length ? 'No consumables match your filters.' : 'No items yet. Add your first consumable above.'}</td></tr>`;
+        return;
+    }
+    items.forEach(item => {
+        const photoHtml = item.photo ? `<img src="${escapeHtml(item.photo)}" class="w-14 h-14 object-cover rounded mx-auto">` : '<span class="text-gray-300">No Image</span>';
+        const threshold = item.lowStockThreshold ?? 5;
+        const stockClass = item.quantity <= 0 ? 'text-red-600' : item.quantity <= threshold ? 'text-orange-500' : 'text-green-600';
+        const stockStatus = item.quantity <= 0
+            ? '<span class="font-semibold text-red-600">Out of stock</span>'
+            : item.quantity <= threshold
+                ? '<span class="font-semibold text-orange-600">Low</span>'
+                : '<span class="text-green-700">OK</span>';
+        tbody.innerHTML += `
+            <tr>
+                <td class="border p-2 text-center">${photoHtml}</td>
+                <td class="border p-2">${escapeHtml(item.name)}</td>
+                <td class="border p-2">${escapeHtml(item.category)}</td>
+                <td class="border p-2 text-center font-bold ${stockClass}">${item.quantity}</td>
+                <td class="border p-2 text-center">${stockStatus} <span class="text-xs text-gray-500">(${threshold})</span></td>
+                <td class="border p-2 text-center no-print">
+                    <div class="flex flex-wrap justify-center gap-1">
+                        <button type="button" data-stock-action="restock" data-item-id="${escapeHtml(item.id)}" class="rounded bg-teal-50 px-2 py-1 text-xs text-teal-800 hover:bg-teal-100">Restock</button>
+                        <button type="button" data-stock-action="adjust" data-item-id="${escapeHtml(item.id)}" class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-gray-200">Adjust</button>
+                        <button type="button" data-stock-action="threshold" data-item-id="${escapeHtml(item.id)}" class="rounded bg-amber-50 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100">Alert</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function handleStockAction(event) {
+    const button = event.target.closest('[data-stock-action]');
+    if (!button) return;
+    const actions = {
+        restock: restockItem,
+        adjust: adjustItemStock,
+        threshold: setLowStockThreshold
+    };
+    actions[button.dataset.stockAction]?.(button.dataset.itemId);
+}
+
+async function submitStockAdjustment(item, adjustment, threshold = item.lowStockThreshold ?? 5) {
+    const response = await fetch(`/api/items/${encodeURIComponent(item.id)}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment, lowStockThreshold: threshold })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.message || 'Stock update failed.');
+    await fetchConsumableData();
+}
+
+async function restockItem(id) {
+    const item = allItems.find(entry => entry.id === id);
+    if (!item) return alert('Consumable not found.');
+    const amount = prompt(`How many units of ${item.name} are being added?`);
+    if (amount === null) return;
+    const quantity = Number(amount);
+    if (!Number.isInteger(quantity) || quantity <= 0) return alert('Enter a whole number greater than zero.');
+    try { await submitStockAdjustment(item, quantity); }
+    catch (error) { alert(error.message); }
+}
+
+async function adjustItemStock(id) {
+    const item = allItems.find(entry => entry.id === id);
+    if (!item) return alert('Consumable not found.');
+    const amount = prompt('Enter a whole-number stock adjustment. Use a negative number to remove stock.', '0');
+    if (amount === null) return;
+    const adjustment = Number(amount);
+    if (!Number.isInteger(adjustment) || adjustment === 0) return alert('Enter a non-zero whole number.');
+    try { await submitStockAdjustment(item, adjustment); }
+    catch (error) { alert(error.message); }
+}
+
+async function setLowStockThreshold(id) {
+    const item = allItems.find(entry => entry.id === id);
+    if (!item) return alert('Consumable not found.');
+    const amount = prompt(`Alert when ${item.name} reaches this quantity or lower:`, String(item.lowStockThreshold ?? 5));
+    if (amount === null) return;
+    const threshold = Number(amount);
+    if (!Number.isInteger(threshold) || threshold < 0) return alert('Enter a non-negative whole number.');
+    try { await submitStockAdjustment(item, 0, threshold); }
+    catch (error) { alert(error.message); }
+}
+
+function updateItemSelect(items) {
+    const select = document.getElementById('itemSelect');
+    select.innerHTML = '<option value="">-- Choose Item --</option>';
+    items.forEach(item => {
+        if (item.quantity > 0) {
+            select.innerHTML += `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} (Available: ${item.quantity})</option>`;
+        }
+    });
+}
+
+function renderRequests() {
+    const query = document.getElementById('requestSearch').value.trim().toLowerCase();
+    const requests = allRequests.filter(request =>
+        `${request.itemName} ${request.requestor} ${request.department}`.toLowerCase().includes(query)
+    );
+    const tbody = document.getElementById('requestTableBody');
+    tbody.innerHTML = '';
+    if (requests.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="border p-4 text-center text-gray-400">${allRequests.length ? 'No requests match your search.' : 'No requests logged yet.'}</td></tr>`;
+        return;
+    }
+    requests.slice().reverse().forEach(req => {
+        tbody.innerHTML += `
+            <tr>
+                <td class="border p-2">${new Date(req.date).toLocaleString()}</td>
+                <td class="border p-2">${escapeHtml(req.itemName)}</td>
+                <td class="border p-2">${escapeHtml(req.requestor)}</td>
+                <td class="border p-2">${escapeHtml(req.department)}</td>
+                <td class="border p-2 text-center">${req.quantity}</td>
+            </tr>
+        `;
+    });
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
+}
+
+// Handle Add Item
+document.getElementById('addItemForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch('/api/items', { method: 'POST', body: formData });
+    const result = await res.json();
+    if (!res.ok || !result.success) return alert(result.message || 'Failed to add item.');
+    e.target.reset();
+    e.target.elements.lowStockThreshold.value = '5';
+    await fetchConsumableData();
+    alert('Item added successfully!');
+});
+
+// Handle Request
+document.getElementById('requestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    const res = await fetch('/api/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) return alert(result.message || 'Failed to submit request.');
+    e.target.reset();
+    await fetchConsumableData();
+    alert('Request logged and inventory updated!');
+});
+
+// ============================================================
+//  IT EQUIPMENT TRACKER
+// ============================================================
+
+let allEquipment = [];
+let allEquipmentLogs = [];
+
+async function fetchEquipmentData() {
+    const [eqRes, logRes] = await Promise.all([
+        fetch('/api/equipment'),
+        fetch('/api/equipment/logs')
+    ]);
+    allEquipment = await eqRes.json();
+    allEquipmentLogs = await logRes.json();
+    if (!eqRes.ok || !Array.isArray(allEquipment)) throw new Error('Failed to load equipment.');
+    if (!logRes.ok || !Array.isArray(allEquipmentLogs)) throw new Error('Failed to load equipment activity.');
+
+    updateFilterOptions('equipmentCategoryFilter', allEquipment.map(equipment => equipment.category));
+    renderEquipment();
+    updateEquipmentSelects(allEquipment);
+    updateEquipmentStatusSummary(allEquipment);
+    renderEquipmentLogs();
+}
+
+function updateEquipmentStatusSummary(equipment) {
+    const available = equipment.filter(e => e.status === 'available').length;
+    const checkedOut = equipment.filter(e => e.status === 'checked-out').length;
+    const maintenance = equipment.filter(e => e.status === 'maintenance').length;
+    const today = toDateInputValue(new Date());
+    const overdue = equipment.filter(e => e.status === 'checked-out' && e.dueDate && e.dueDate < today).length;
+    document.getElementById('eqStatusSummary').innerHTML = `
+        <span class="px-3 py-1 rounded-full text-sm font-semibold status-available">✅ Available: ${available}</span>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold status-checked-out">📤 Deployed: ${checkedOut}</span>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold ${overdue ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}">⚠️ Overdue: ${overdue}</span>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold status-maintenance">🔧 Maintenance: ${maintenance}</span>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600">Total: ${equipment.length}</span>
+    `;
+}
+
+function renderEquipment() {
+    const query = document.getElementById('equipmentSearch').value.trim().toLowerCase();
+    const category = document.getElementById('equipmentCategoryFilter').value;
+    const status = document.getElementById('equipmentStatusFilter').value;
+    const sort = document.getElementById('equipmentSort').value;
+    const today = toDateInputValue(new Date());
+    const equipment = allEquipment.filter(item => {
+        const overdue = item.status === 'checked-out' && item.dueDate && item.dueDate < today;
+        const text = `${item.name} ${item.category} ${item.serialNumber} ${item.borrower || ''} ${item.currentLocation}`.toLowerCase();
+        return (!query || text.includes(query)) &&
+            (!category || item.category === category) &&
+            (!status || (status === 'overdue' ? overdue : item.status === status));
+    }).sort((a, b) => {
+        if (sort === 'category') return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
+        if (sort === 'dueDate') return (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31');
+        if (sort === 'location') return (a.currentLocation || '').localeCompare(b.currentLocation || '');
+        return a.name.localeCompare(b.name);
+    });
+    updateEquipmentTable(equipment);
+}
+
+function updateEquipmentTable(equipment) {
+    const tbody = document.getElementById('equipmentTableBody');
+    tbody.innerHTML = '';
+    if (equipment.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="border p-4 text-center text-gray-400">${allEquipment.length ? 'No equipment matches your filters.' : 'No equipment registered yet.'}</td></tr>`;
+        return;
+    }
+    equipment.forEach(eq => {
+        const photoHtml = eq.photo ? `<img src="${escapeHtml(eq.photo)}" class="w-14 h-14 object-cover rounded mx-auto">` : '<span class="text-gray-300 text-xs">No Image</span>';
+        const statusBadge = getStatusBadge(eq.status);
+        const conditionBadge = getConditionBadge(eq.condition);
+        const borrowerInfo = eq.borrower ? `${escapeHtml(eq.borrower)}<br><span class="text-xs text-gray-400">${escapeHtml(eq.department || '')}</span>` : '—';
+        const isOverdue = eq.status === 'checked-out' && eq.dueDate && eq.dueDate < toDateInputValue(new Date());
+        const dueDate = eq.dueDate
+            ? `<span class="${isOverdue ? 'font-semibold text-red-600' : 'text-gray-700'}">${isOverdue ? 'Overdue · ' : ''}${formatDateOnly(eq.dueDate)}</span>`
+            : '—';
+
+        let actions = '';
+        if (eq.status === 'available') {
+            actions += `<button type="button" data-equipment-action="maintenance" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200">🔧 Maintenance</button>`;
+        } else if (eq.status === 'maintenance') {
+            actions += `<button type="button" data-equipment-action="available" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">✅ Mark Available</button>`;
+        }
+        actions += `<button type="button" data-equipment-action="edit" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">Edit</button>`;
+        if (eq.status !== 'checked-out') {
+            actions += `<button type="button" data-equipment-action="delete" data-equipment-id="${escapeHtml(eq.id)}" class="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">Remove</button>`;
+        }
+
+        tbody.innerHTML += `
+            <tr>
+                <td class="border p-2 text-center">${photoHtml}</td>
+                <td class="border p-2 font-medium">${escapeHtml(eq.name)}</td>
+                <td class="border p-2">${escapeHtml(eq.category)}</td>
+                <td class="border p-2 text-xs text-gray-500">${escapeHtml(eq.serialNumber || '—')}</td>
+                <td class="border p-2 text-center">${statusBadge}</td>
+                <td class="border p-2 text-center">${dueDate}</td>
+                <td class="border p-2">${escapeHtml(eq.currentLocation)}</td>
+                <td class="border p-2 text-center">${borrowerInfo}</td>
+                <td class="border p-2 text-center">${conditionBadge}</td>
+                <td class="border p-2 text-center no-print"><div class="flex flex-wrap justify-center gap-1">${actions}</div></td>
+            </tr>
+        `;
+    });
+}
+
+function formatDateOnly(value) {
+    if (!value) return '—';
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString();
+}
+
+async function handleEquipmentAction(event) {
+    const button = event.target.closest('[data-equipment-action]');
+    if (!button) return;
+    const { equipmentAction: action, equipmentId: id } = button.dataset;
+    if (action === 'edit') return openEquipmentEditor(id);
+    if (action === 'delete') return removeEquipment(id);
+    if (action === 'maintenance') return setMaintenance(id);
+    if (action === 'available') return clearMaintenance(id);
+}
+
+function openEquipmentEditor(id) {
+    const equipment = allEquipment.find(item => item.id === id);
+    if (!equipment) return alert('Equipment record not found.');
+    const form = document.getElementById('editEquipmentForm');
+    form.elements.equipmentId.value = equipment.id;
+    form.elements.name.value = equipment.name;
+    form.elements.category.value = equipment.category;
+    form.elements.serialNumber.value = equipment.serialNumber || '';
+    form.elements.homeLocation.value = equipment.homeLocation || 'IT Room';
+    form.elements.condition.value = equipment.condition || 'good';
+    form.elements.photo.value = '';
+    const dueDateField = document.getElementById('editDueDateField');
+    dueDateField.classList.toggle('hidden', equipment.status !== 'checked-out');
+    form.elements.dueDate.required = equipment.status === 'checked-out';
+    form.elements.dueDate.value = equipment.dueDate || '';
+    document.getElementById('editEquipmentDialog').showModal();
+}
+
+function closeEquipmentEditor() {
+    document.getElementById('editEquipmentDialog').close();
+}
+
+async function saveEquipmentEdits(event) {
+    event.preventDefault();
+    const form = event.target;
+    const id = form.elements.equipmentId.value;
+    const formData = new FormData(form);
+    if (!form.elements.dueDate.required) formData.delete('dueDate');
+    const response = await fetch(`/api/equipment/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: formData
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) return alert(result.message || 'Failed to update equipment.');
+    closeEquipmentEditor();
+    await fetchEquipmentData();
+}
+
+async function removeEquipment(id) {
+    const equipment = allEquipment.find(item => item.id === id);
+    if (!equipment || !confirm(`Remove ${equipment.name} from the equipment inventory? This cannot be undone.`)) return;
+    const response = await fetch(`/api/equipment/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const result = await response.json();
+    if (!response.ok || !result.success) return alert(result.message || 'Failed to remove equipment.');
+    await fetchEquipmentData();
+}
+
+function getStatusBadge(status) {
+    const map = {
+        'available': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-available">✅ Available</span>',
+        'checked-out': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-checked-out">📤 Deployed</span>',
+        'maintenance': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-maintenance">🔧 Maintenance</span>'
+    };
+    return map[status] || status;
+}
+
+function getConditionBadge(condition) {
+    const map = {
+        'good': '<span class="text-green-600 text-xs font-medium">Good</span>',
+        'fair': '<span class="text-yellow-600 text-xs font-medium">Fair</span>',
+        'needs-repair': '<span class="text-red-600 text-xs font-medium">Needs Repair</span>'
+    };
+    return map[condition] || condition || '—';
+}
+
+function updateEquipmentSelects(equipment) {
+    const checkoutSelect = document.getElementById('eqCheckoutSelect');
+    const returnSelect = document.getElementById('eqReturnSelect');
+
+    checkoutSelect.innerHTML = '<option value="">-- Select Available Equipment --</option>';
+    returnSelect.innerHTML = '<option value="">-- Select Deployed Equipment --</option>';
+
+    equipment.forEach(eq => {
+        if (eq.status === 'available') {
+            checkoutSelect.innerHTML += `<option value="${escapeHtml(eq.id)}">${escapeHtml(eq.name)} (${escapeHtml(eq.category)})</option>`;
+        }
+        if (eq.status === 'checked-out') {
+            returnSelect.innerHTML += `<option value="${escapeHtml(eq.id)}">${escapeHtml(eq.name)} — with ${escapeHtml(eq.borrower)} @ ${escapeHtml(eq.currentLocation)}${eq.dueDate ? ` (due ${formatDateOnly(eq.dueDate)})` : ''}</option>`;
+        }
+    });
+}
+
+function renderEquipmentLogs() {
+    const query = document.getElementById('activitySearch').value.trim().toLowerCase();
+    const action = document.getElementById('activityActionFilter').value;
+    const sort = document.getElementById('activitySort').value;
+    const logs = allEquipmentLogs.filter(log => {
+        const text = `${log.equipmentName} ${log.borrower || ''} ${log.department || ''} ${log.location || ''} ${log.dueDate || ''} ${log.notes || ''}`.toLowerCase();
+        return (!query || text.includes(query)) && (!action || log.action === action);
+    }).sort((a, b) => sort === 'oldest'
+        ? new Date(a.date) - new Date(b.date)
+        : new Date(b.date) - new Date(a.date));
+    updateEquipmentLogTable(logs);
+}
+
+function updateEquipmentLogTable(logs) {
+    const tbody = document.getElementById('equipmentLogBody');
+    tbody.innerHTML = '';
+    if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="border p-4 text-center text-gray-400">${allEquipmentLogs.length ? 'No activity matches your filters.' : 'No activity logged yet.'}</td></tr>`;
+        return;
+    }
+    logs.forEach(log => {
+        const actionBadge = log.action === 'checkout'
+            ? '<span class="text-orange-600 font-semibold">📤 Deployment</span>'
+            : log.action === 'return'
+            ? '<span class="text-green-600 font-semibold">📥 Return</span>'
+            : '<span class="text-yellow-600 font-semibold">🔧 Maintenance</span>';
+        tbody.innerHTML += `
+            <tr>
+                <td class="border p-2">${new Date(log.date).toLocaleString()}</td>
+                <td class="border p-2">${escapeHtml(log.equipmentName)}</td>
+                <td class="border p-2 text-center">${actionBadge}</td>
+                <td class="border p-2">${escapeHtml(log.borrower || '—')}</td>
+                <td class="border p-2">${escapeHtml(log.department || '—')}</td>
+                <td class="border p-2">${escapeHtml(log.location || '—')}</td>
+                <td class="border p-2">${log.dueDate ? formatDateOnly(log.dueDate) : '—'}</td>
+                <td class="border p-2 text-gray-500 text-xs">${escapeHtml(log.notes || '')}</td>
+            </tr>
+        `;
+    });
+}
+
+// Add Equipment
+document.getElementById('addEquipmentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch('/api/equipment', { method: 'POST', body: formData });
+    const result = await res.json();
+    if (!res.ok || !result.success) return alert(result.message || 'Failed to add equipment.');
+    e.target.reset();
+    e.target.querySelector('[name="homeLocation"]').value = 'IT Storage Room';
+    await fetchEquipmentData();
+    alert('Equipment added successfully!');
+});
+
+// Deploy Equipment
+document.getElementById('checkoutEquipmentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    const eqId = data.equipmentId;
+    delete data.equipmentId;
+
+    const res = await fetch(`/api/equipment/${eqId}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) return alert(result.message || 'Failed to deploy equipment.');
+    e.target.reset();
+    await fetchEquipmentData();
+    alert('Equipment deployed!');
+});
+
+// Return Equipment
+document.getElementById('returnEquipmentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    const eqId = data.equipmentId;
+    delete data.equipmentId;
+
+    const res = await fetch(`/api/equipment/${eqId}/return`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) return alert(result.message || 'Failed to return equipment.');
+    e.target.reset();
+    await fetchEquipmentData();
+    alert('Equipment returned!');
+});
+
+// Set to Maintenance
+async function setMaintenance(id) {
+    const notes = prompt('Maintenance notes (optional):');
+    if (notes === null) return;
+    const res = await fetch(`/api/equipment/${id}/maintenance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
+    });
+    const result = await res.json();
+    if (result.success) fetchEquipmentData();
+    else alert(result.message);
+}
+
+// Clear Maintenance (mark available)
+async function clearMaintenance(id) {
+    const res = await fetch(`/api/equipment/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'available' })
+    });
+    const result = await res.json();
+    if (result.success) fetchEquipmentData();
+    else alert(result.message);
+}
+
+// ============================================================
+//  ANALYTICS & REPORTS
+// ============================================================
+
+let chartByItem = null;
+let chartByDept = null;
+let chartDaily = null;
+let chartByCategory = null;
+
+const CHART_COLORS = [
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+    '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16',
+    '#06b6d4', '#d946ef', '#0ea5e9', '#e11d48', '#a3e635'
+];
+
+async function generateReport({ silent = false } = {}) {
+    const startDate = document.getElementById('reportStartDate').value;
+    const endDate = document.getElementById('reportEndDate').value;
+    if (!startDate || !endDate || startDate > endDate) {
+        if (!silent) alert('Choose a valid date range. The start date must not be after the end date.');
+        return;
+    }
+    const params = new URLSearchParams({ startDate, endDate });
+
+    const [consumableRes, equipmentRes] = await Promise.all([
+        fetch(`/api/analytics/consumables?${params}`),
+        fetch(`/api/analytics/equipment?${params}`)
+    ]);
+    const cData = await consumableRes.json();
+    const eData = await equipmentRes.json();
+
+    if (!consumableRes.ok || !cData.success || !equipmentRes.ok || !eData.success) {
+        if (!silent) alert(cData.message || eData.message || 'Failed to generate report.');
+        return;
+    }
+    latestReportData = { cData, eData, startDate, endDate };
+
+    document.getElementById('reportEmpty').classList.add('hidden');
+    document.getElementById('reportContent').classList.remove('hidden');
+    document.getElementById('exportReportButton').disabled = false;
+
+    // Print header
+    document.getElementById('printPeriod').textContent = `Period: ${formatDateOnly(startDate)} – ${formatDateOnly(endDate)}`;
+    document.getElementById('printDate').textContent = new Date().toLocaleString();
+
+    // Summary Cards
+    document.getElementById('rptTotalTx').textContent = cData.totalTransactions;
+    document.getElementById('rptTotalQty').textContent = cData.totalQuantity;
+    document.getElementById('rptTopItem').textContent = cData.byItem.length > 0 ? `${cData.byItem[0].itemName} (${cData.byItem[0].totalQuantity})` : '—';
+    document.getElementById('rptTopDept').textContent = cData.byDepartment.length > 0 ? `${cData.byDepartment[0].department} (${cData.byDepartment[0].totalQuantity})` : '—';
+
+    // Charts
+    renderBarChart('chartByItem', chartByItem, cData.byItem.map(i => i.itemName), cData.byItem.map(i => i.totalQuantity), 'Qty Consumed', (c) => { chartByItem = c; });
+    renderPieChart('chartByDept', chartByDept, cData.byDepartment.map(d => d.department), cData.byDepartment.map(d => d.totalQuantity), (c) => { chartByDept = c; });
+    renderLineChart('chartDaily', chartDaily, cData.dailyBreakdown.map(d => d.date), cData.dailyBreakdown.map(d => d.totalQuantity), 'Qty Consumed', (c) => { chartDaily = c; });
+    renderDoughnutChart('chartByCategory', chartByCategory, cData.byCategory.map(c => c.category), cData.byCategory.map(c => c.totalQuantity), (c) => { chartByCategory = c; });
+
+    // Item breakdown table
+    const itemTbody = document.getElementById('rptItemTable');
+    itemTbody.innerHTML = '';
+    if (cData.byItem.length === 0) {
+        itemTbody.innerHTML = '<tr><td colspan="3" class="border p-3 text-center text-gray-400">No consumption this period.</td></tr>';
+    } else {
+        cData.byItem.forEach(i => {
+            itemTbody.innerHTML += `<tr>
+                <td class="border p-2">${i.itemName}</td>
+                <td class="border p-2 text-center font-semibold">${i.totalQuantity}</td>
+                <td class="border p-2 text-center">${i.transactions}</td>
+            </tr>`;
+        });
+    }
+
+    // Requestor breakdown table
+    const requestorTbody = document.getElementById('rptRequestorTable');
+    requestorTbody.innerHTML = '';
+    if (cData.byRequestor.length === 0) {
+        requestorTbody.innerHTML = '<tr><td colspan="4" class="border p-3 text-center text-gray-400">No consumption this period.</td></tr>';
+    } else {
+        cData.byRequestor.forEach(r => {
+            requestorTbody.innerHTML += `<tr>
+                <td class="border p-2">${r.requestor}</td>
+                <td class="border p-2">${r.department}</td>
+                <td class="border p-2 text-center font-semibold">${r.totalQuantity}</td>
+                <td class="border p-2 text-center">${r.transactions}</td>
+            </tr>`;
+        });
+    }
+
+    // Stock snapshot
+    const stockTbody = document.getElementById('rptStockTable');
+    stockTbody.innerHTML = '';
+    cData.stockSnapshot.forEach(s => {
+        const statusLabel = s.currentStock <= 0 ? '<span class="text-red-600 font-bold">OUT OF STOCK</span>'
+            : s.currentStock <= (s.lowStockThreshold ?? 5) ? '<span class="text-orange-500 font-semibold">Low Stock</span>'
+            : '<span class="text-green-600">In Stock</span>';
+        stockTbody.innerHTML += `<tr>
+            <td class="border p-2">${s.name}</td>
+            <td class="border p-2 text-center">${s.category}</td>
+            <td class="border p-2 text-center font-bold">${s.currentStock}</td>
+            <td class="border p-2 text-center">${statusLabel}</td>
+        </tr>`;
+    });
+
+    // Equipment analytics
+    if (eData.success) {
+        const s = eData.summary;
+        document.getElementById('eqAnalyticsSummary').innerHTML = `
+            <div class="bg-gray-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Total Equipment</p><p class="text-xl font-bold">${s.totalEquipment}</p></div>
+            <div class="bg-green-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Available</p><p class="text-xl font-bold text-green-600">${s.available}</p></div>
+            <div class="bg-red-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Deployed</p><p class="text-xl font-bold text-red-600">${s.checkedOut}</p></div>
+            <div class="bg-yellow-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Maintenance</p><p class="text-xl font-bold text-yellow-600">${s.maintenance}</p></div>
+        `;
+        const eqTbody = document.getElementById('rptEqUsageTable');
+        eqTbody.innerHTML = '';
+        if (eData.mostUsed.length === 0) {
+        eqTbody.innerHTML = '<tr><td colspan="2" class="border p-3 text-center text-gray-400">No equipment deployments this period.</td></tr>';
+        } else {
+            eData.mostUsed.forEach(e => {
+                eqTbody.innerHTML += `<tr>
+                    <td class="border p-2">${e.name}</td>
+                    <td class="border p-2 text-center font-semibold">${e.checkouts}</td>
+                </tr>`;
+            });
+        }
+    }
+}
+
+let latestReportData = null;
+
+function exportReportCsv() {
+    if (!latestReportData) return alert('Generate a report before exporting.');
+    const { cData, eData, startDate, endDate } = latestReportData;
+    const rows = [
+        ['Record Type', 'Date', 'Item or Equipment', 'Requestor or Borrower', 'Department', 'Location', 'Due Date', 'Quantity', 'Notes']
+    ];
+    cData.transactions.forEach(transaction => rows.push([
+        'Consumable request',
+        transaction.date,
+        transaction.itemName,
+        transaction.requestor,
+        transaction.department,
+        '',
+        '',
+        transaction.quantity,
+        ''
+    ]));
+    eData.deployments.forEach(deployment => rows.push([
+        'Equipment deployment',
+        deployment.date,
+        deployment.equipmentName,
+        deployment.borrower,
+        deployment.department,
+        deployment.location,
+        deployment.dueDate,
+        '',
+        deployment.notes
+    ]));
+
+    const csv = rows.map(row => row.map(csvCell).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `inventory-report-${startDate}-to-${endDate}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvCell(value) {
+    let text = String(value ?? '');
+    if (/^[=+\-@]/.test(text)) text = `'${text}`;
+    return `"${text.replace(/"/g, '""')}"`;
+}
+
+// --- Chart helpers ---
+
+function renderBarChart(canvasId, existingChart, labels, data, label, setter) {
+    if (existingChart) existingChart.destroy();
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    setter(new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ label, data, backgroundColor: CHART_COLORS.slice(0, data.length), borderRadius: 4 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    }));
+}
+
+function renderPieChart(canvasId, existingChart, labels, data, setter) {
+    if (existingChart) existingChart.destroy();
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    setter(new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels,
+            datasets: [{ data, backgroundColor: CHART_COLORS.slice(0, data.length) }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    }));
+}
+
+function renderDoughnutChart(canvasId, existingChart, labels, data, setter) {
+    if (existingChart) existingChart.destroy();
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    setter(new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{ data, backgroundColor: CHART_COLORS.slice(0, data.length) }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    }));
+}
+
+function renderLineChart(canvasId, existingChart, labels, data, label, setter) {
+    if (existingChart) existingChart.destroy();
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    setter(new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{ label, data, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    }));
+}

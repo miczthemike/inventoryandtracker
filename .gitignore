@@ -1,0 +1,6 @@
+node_modules/
+uploads/
+backups/
+db.json
+db.bak.json
+db.tmp.json
