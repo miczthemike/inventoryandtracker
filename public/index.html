@@ -22,6 +22,14 @@
             isolation: isolate;
             background-color: #f1f7f7;
         }
+        .dot-grid-background {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
         .app-pending #appShell,
         .app-pending #appFooter { visibility: hidden; }
         body::before {
@@ -31,7 +39,7 @@
             z-index: 0;
             pointer-events: none;
             background: url("logo.png") center / min(78vw, 780px) no-repeat;
-            opacity: 0.5;
+            opacity: 0.18;
         }
         .tab-btn.active { border-color: var(--brand-primary); color: var(--brand-primary-dark); background: var(--brand-light); }
         .tab-content { display: none; }
@@ -129,6 +137,7 @@
             .print-only { display: block !important; }
             body { background: white; }
             body::before { display: none; }
+            .dot-grid-background { display: none; }
         }
         .print-only { display: none; }
     </style>
@@ -782,6 +791,7 @@
         <p>&copy; 2026 PROXY Plus by The Oriental &bull; All Rights Reserved</p>
         <p class="mt-1">System Architecture &amp; Fleet Operations by <a href="http://miczthemike.online" class="font-medium text-teal-700 hover:text-teal-900 hover:underline">MicztheMike</a></p>
     </footer>
+    <script src="dot-grid.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
