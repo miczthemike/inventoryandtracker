@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('editEquipmentForm').addEventListener('submit', saveEquipmentEdits);
+    document.getElementById('editEquipmentForm').elements.status.addEventListener('change', updateEquipmentEditStatusFields);
     ['reportStartDate', 'reportEndDate'].forEach(id => {
         document.getElementById(id).addEventListener('change', () => {
             latestReportData = null;
@@ -672,6 +673,7 @@ function updateEquipmentStatusSummary(equipment) {
     const available = equipment.filter(e => e.status === 'available').length;
     const checkedOut = equipment.filter(e => e.status === 'checked-out').length;
     const maintenance = equipment.filter(e => e.status === 'maintenance').length;
+    const missing = equipment.filter(e => e.status === 'missing').length;
     const today = toDateInputValue(new Date());
     const overdue = equipment.filter(e => e.status === 'checked-out' && e.dueDate && e.dueDate < today).length;
     document.getElementById('eqStatusSummary').innerHTML = `
@@ -679,6 +681,7 @@ function updateEquipmentStatusSummary(equipment) {
         <span class="px-3 py-1 rounded-full text-sm font-semibold status-checked-out">📤 Deployed: ${checkedOut}</span>
         <span class="px-3 py-1 rounded-full text-sm font-semibold ${overdue ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}">⚠️ Overdue: ${overdue}</span>
         <span class="px-3 py-1 rounded-full text-sm font-semibold status-maintenance">🔧 Maintenance: ${maintenance}</span>
+        <span class="px-3 py-1 rounded-full text-sm font-semibold status-missing">❓ Missing: ${missing}</span>
         <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600">Total: ${equipment.length}</span>
     `;
 }
@@ -741,7 +744,7 @@ function updateEquipmentTable(equipment) {
                 <td class="border p-2 text-xs text-gray-500">${escapeHtml(eq.serialNumber || '—')}</td>
                 <td class="border p-2 text-center">${statusBadge}</td>
                 <td class="border p-2 text-center">${dueDate}</td>
-                <td class="border p-2">${escapeHtml(eq.currentLocation)}</td>
+                <td class="border p-2">${escapeHtml(eq.currentLocation || '—')}${eq.status === 'missing' ? ' <span class="ml-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold status-missing">Missing</span>' : ''}</td>
                 <td class="border p-2 text-center">${borrowerInfo}</td>
                 <td class="border p-2 text-center">${conditionBadge}</td>
                 <td class="border p-2">${escapeHtml(eq.createdBy || 'Not recorded')}</td>
@@ -776,13 +779,29 @@ function openEquipmentEditor(id) {
     form.elements.category.value = equipment.category;
     form.elements.serialNumber.value = equipment.serialNumber || '';
     form.elements.homeLocation.value = equipment.homeLocation || 'IT Room';
+    const statusSelect = form.elements.status;
+    statusSelect.querySelector('option[value="checked-out"]')?.remove();
+    if (equipment.status === 'checked-out') {
+        statusSelect.add(new Option('Deployed', 'checked-out'));
+    }
+    statusSelect.value = equipment.status || 'available';
+    Array.from(statusSelect.options).forEach(option => {
+        option.disabled = equipment.status === 'checked-out' &&
+            !['checked-out', 'missing'].includes(option.value);
+    });
     form.elements.condition.value = equipment.condition || 'good';
     form.elements.photo.value = '';
-    const dueDateField = document.getElementById('editDueDateField');
-    dueDateField.classList.toggle('hidden', equipment.status !== 'checked-out');
-    form.elements.dueDate.required = equipment.status === 'checked-out';
+    updateEquipmentEditStatusFields();
     form.elements.dueDate.value = equipment.dueDate || '';
     document.getElementById('editEquipmentDialog').showModal();
+}
+
+function updateEquipmentEditStatusFields() {
+    const form = document.getElementById('editEquipmentForm');
+    const dueDateField = document.getElementById('editDueDateField');
+    const isDeployed = form.elements.status.value === 'checked-out';
+    dueDateField.classList.toggle('hidden', !isDeployed);
+    form.elements.dueDate.required = isDeployed;
 }
 
 function closeEquipmentEditor() {
@@ -818,7 +837,8 @@ function getStatusBadge(status) {
     const map = {
         'available': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-available">✅ Available</span>',
         'checked-out': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-checked-out">📤 Deployed</span>',
-        'maintenance': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-maintenance">🔧 Maintenance</span>'
+        'maintenance': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-maintenance">🔧 Maintenance</span>',
+        'missing': '<span class="px-2 py-1 rounded-full text-xs font-semibold status-missing">❓ Missing</span>'
     };
     return map[status] || status;
 }
@@ -874,6 +894,7 @@ function updateEquipmentLogTable(logs) {
             checkout: '<span class="text-orange-600 font-semibold">📤 Deployment</span>',
             return: '<span class="text-green-600 font-semibold">📥 Return</span>',
             maintenance: '<span class="text-yellow-600 font-semibold">🔧 Maintenance</span>',
+            missing: '<span class="text-pink-700 font-semibold">❓ Missing</span>',
             added: '<span class="text-blue-600 font-semibold">➕ Added</span>',
             updated: '<span class="text-indigo-600 font-semibold">✏️ Updated</span>',
             removed: '<span class="text-red-600 font-semibold">🗑 Removed</span>'
@@ -1086,6 +1107,7 @@ async function generateReport({ silent = false } = {}) {
             <div class="bg-green-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Available</p><p class="text-xl font-bold text-green-600">${s.available}</p></div>
             <div class="bg-red-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Deployed</p><p class="text-xl font-bold text-red-600">${s.checkedOut}</p></div>
             <div class="bg-yellow-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Maintenance</p><p class="text-xl font-bold text-yellow-600">${s.maintenance}</p></div>
+            <div class="bg-pink-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Missing</p><p class="text-xl font-bold text-pink-700">${s.missing}</p></div>
         `;
         const eqTbody = document.getElementById('rptEqUsageTable');
         eqTbody.innerHTML = '';

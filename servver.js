@@ -784,7 +784,7 @@ app.post('/api/equipment', requirePermission('equipmentAdd'), upload.single('pho
             serialNumber: req.body.serialNumber || '',
             homeLocation: req.body.homeLocation || 'IT Storage',
             currentLocation: req.body.homeLocation || 'IT Storage',
-            status: 'available',   // available | checked-out | maintenance
+            status: 'available',   // available | checked-out | maintenance | missing
             condition: req.body.condition || 'good',
             borrower: null,
             department: null,
@@ -822,6 +822,25 @@ app.put('/api/equipment/:id', requirePermission('equipmentManage'), upload.singl
         const eq = db.equipment.find(e => e.id === req.params.id);
         if (!eq) return res.status(404).json({ success: false, message: 'Equipment not found.' });
         const equipmentName = eq.name;
+        const previousStatus = eq.status;
+        const previousBorrower = eq.borrower || '';
+        const previousDepartment = eq.department || '';
+        const previousDueDate = eq.dueDate || '';
+        const requestedStatus = req.body.status;
+
+        if (requestedStatus !== undefined &&
+            !['available', 'checked-out', 'maintenance', 'missing'].includes(requestedStatus)) {
+            return res.status(400).json({ success: false, message: 'Invalid equipment status.' });
+        }
+        if (previousStatus === 'checked-out' &&
+            requestedStatus !== undefined &&
+            requestedStatus !== 'checked-out' &&
+            requestedStatus !== 'missing') {
+            return res.status(400).json({ success: false, message: 'Return deployed equipment before changing its status.' });
+        }
+        if (requestedStatus === 'checked-out' && previousStatus !== 'checked-out') {
+            return res.status(400).json({ success: false, message: 'Use the deployment form to mark equipment as deployed.' });
+        }
 
         if (req.body.dueDate !== undefined &&
             (eq.status !== 'checked-out' || !isValidDateOnly(req.body.dueDate))) {
@@ -832,7 +851,7 @@ app.put('/api/equipment/:id', requirePermission('equipmentManage'), upload.singl
         if (req.body.serialNumber !== undefined) eq.serialNumber = req.body.serialNumber;
         if (req.body.homeLocation?.trim()) {
             eq.homeLocation = req.body.homeLocation.trim();
-            if (eq.status !== 'checked-out') eq.currentLocation = eq.homeLocation;
+            if (eq.status === 'available') eq.currentLocation = eq.homeLocation;
         }
         if (req.body.condition) eq.condition = req.body.condition;
         if (req.body.dueDate !== undefined) {
@@ -842,14 +861,22 @@ app.put('/api/equipment/:id', requirePermission('equipmentManage'), upload.singl
             );
             if (latestDeployment) latestDeployment.dueDate = req.body.dueDate;
         }
-        if (req.body.status === 'available' && eq.status === 'maintenance') {
-            eq.status = 'available';
-            eq.currentLocation = eq.homeLocation;
-            eq.borrower = null;
-            eq.department = null;
-            eq.eventHall = null;
-            eq.dateCheckedOut = null;
-            eq.dueDate = null;
+        if (requestedStatus !== undefined) {
+            eq.status = requestedStatus;
+            if (requestedStatus === 'available' && ['maintenance', 'missing'].includes(previousStatus)) {
+                eq.currentLocation = eq.homeLocation;
+            } else if (requestedStatus === 'maintenance') {
+                eq.currentLocation = 'Under Maintenance';
+            } else if (requestedStatus === 'missing' && previousStatus === 'maintenance') {
+                eq.currentLocation = eq.homeLocation;
+            }
+            if (requestedStatus !== 'checked-out') {
+                eq.borrower = null;
+                eq.department = null;
+                eq.eventHall = null;
+                eq.dateCheckedOut = null;
+                eq.dueDate = null;
+            }
         }
         if (req.file) eq.photo = `/uploads/${req.file.filename}`;
 
@@ -857,12 +884,22 @@ app.put('/api/equipment/:id', requirePermission('equipmentManage'), upload.singl
             id: crypto.randomUUID(),
             equipmentId: eq.id,
             equipmentName: eq.name,
-            action: 'updated',
-            borrower: eq.borrower || '',
-            department: eq.department || '',
+            action: requestedStatus === 'missing' && previousStatus !== 'missing'
+                ? 'missing'
+                : requestedStatus === 'maintenance' && previousStatus !== 'maintenance'
+                    ? 'maintenance'
+                    : 'updated',
+            borrower: requestedStatus === 'missing' ? previousBorrower : eq.borrower || '',
+            department: requestedStatus === 'missing' ? previousDepartment : eq.department || '',
             location: eq.currentLocation || eq.homeLocation,
-            dueDate: eq.dueDate || '',
-            notes: req.body.status === 'available' ? 'Maintenance cleared; marked available' : 'Equipment details updated',
+            dueDate: requestedStatus === 'missing' ? previousDueDate : eq.dueDate || '',
+            notes: requestedStatus === 'missing' && previousStatus !== 'missing'
+                ? `Marked missing${previousStatus === 'checked-out' ? ` while deployed to ${eq.currentLocation}` : ''}`
+                : requestedStatus === 'maintenance' && previousStatus !== 'maintenance'
+                    ? 'Marked for maintenance'
+                    : requestedStatus === 'available' && ['maintenance', 'missing'].includes(previousStatus)
+                        ? `${previousStatus === 'missing' ? 'Missing status cleared' : 'Maintenance cleared'}; marked available`
+                        : 'Equipment details updated',
             processedBy: req.auth.username,
             date: new Date().toISOString()
         });
@@ -916,6 +953,9 @@ app.post('/api/equipment/:id/checkout', requirePermission('equipmentManage'), as
         }
         if (eq.status === 'maintenance') {
             return res.status(400).json({ success: false, message: 'Equipment is under maintenance.' });
+        }
+        if (eq.status === 'missing') {
+            return res.status(400).json({ success: false, message: 'Equipment marked missing cannot be deployed.' });
         }
 
         const { borrower, department, eventHall, notes, dueDate } = req.body;
@@ -1163,6 +1203,7 @@ app.get('/api/analytics/equipment', requirePermission('analyticsView'), (req, re
         const available = db.equipment.filter(e => e.status === 'available').length;
         const checkedOut = db.equipment.filter(e => e.status === 'checked-out').length;
         const maintenance = db.equipment.filter(e => e.status === 'maintenance').length;
+        const missing = db.equipment.filter(e => e.status === 'missing').length;
 
         const filteredLogs = range
             ? db.equipmentLogs.filter(log => {
@@ -1202,7 +1243,7 @@ app.get('/api/analytics/equipment', requirePermission('analyticsView'), (req, re
         res.json({
             success: true,
             period: range,
-            summary: { totalEquipment, available, checkedOut, maintenance },
+            summary: { totalEquipment, available, checkedOut, maintenance, missing },
             mostUsed, deployments, byLocation,
             totalLogs: filteredLogs.length
         });
