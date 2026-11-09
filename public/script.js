@@ -6,6 +6,7 @@ let authState = null;
 let usersCache = [];
 let liveEvents = null;
 let sessionCheckInProgress = false;
+const JOB_STATUSES = ['Pending', 'In Progress', 'Waiting on Requester', 'On Hold', 'Completed', 'Cancelled'];
 
 document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
@@ -13,8 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reportStartDate').value = `${today.slice(0, 7)}-01`;
     document.getElementById('reportEndDate').value = today;
     document.querySelector('[name="dueDate"]').min = today;
+    const defaultJobFollowUp = new Date();
+    defaultJobFollowUp.setDate(defaultJobFollowUp.getDate() + 7);
+    document.getElementById('jobFollowUpDate').value = toDateInputValue(defaultJobFollowUp);
 
-    document.querySelectorAll('#content-consumables, #content-equipment').forEach(section => {
+    document.querySelectorAll('#content-consumables, #content-equipment, #content-jobs').forEach(section => {
         section.addEventListener('click', (event) => {
             const button = event.target.closest('.form-toggle > button');
             if (button) toggleFormPanel(button);
@@ -22,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('equipmentTableBody').addEventListener('click', handleEquipmentAction);
     document.getElementById('inventoryTableBody').addEventListener('click', handleStockAction);
+    document.getElementById('jobTableBody').addEventListener('click', handleJobAction);
 
     [
         ['inventorySearch', renderInventory],
@@ -35,7 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ['equipmentSort', renderEquipment],
         ['activitySearch', renderEquipmentLogs],
         ['activityActionFilter', renderEquipmentLogs],
-        ['activitySort', renderEquipmentLogs]
+        ['activitySort', renderEquipmentLogs],
+        ['jobSearch', renderJobs],
+        ['jobStatusFilter', renderJobs]
     ].forEach(([id, handler]) => {
         document.getElementById(id).addEventListener('input', handler);
         document.getElementById(id).addEventListener('change', handler);
@@ -43,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('editEquipmentForm').addEventListener('submit', saveEquipmentEdits);
     document.getElementById('editEquipmentForm').elements.status.addEventListener('change', updateEquipmentEditStatusFields);
+    document.getElementById('addJobForm').addEventListener('submit', fileNewJob);
+    document.getElementById('jobStatusForm').addEventListener('submit', saveJobStatus);
+    document.getElementById('cancelJobStatusButton').addEventListener('click', () => document.getElementById('jobStatusDialog').close());
     ['reportStartDate', 'reportEndDate'].forEach(id => {
         document.getElementById(id).addEventListener('change', () => {
             latestReportData = null;
@@ -110,6 +120,7 @@ async function refreshSharedData() {
     const tasks = [];
     if (hasPermission('consumablesView')) tasks.push(fetchConsumableData());
     if (hasPermission('equipmentView')) tasks.push(fetchEquipmentData());
+    if (authState) tasks.push(fetchJobs());
     const results = await Promise.allSettled(tasks);
     const failed = results.find(result => result.status === 'rejected');
     if (failed) {
@@ -176,6 +187,7 @@ async function handleExpiredSession() {
     allRequests = [];
     allEquipment = [];
     allEquipmentLogs = [];
+    allJobs = [];
     latestReportData = null;
     if (liveEvents) {
         liveEvents.close();
@@ -195,9 +207,10 @@ async function enterApplication() {
 
     if (hasPermission('consumablesView')) await fetchConsumableData();
     if (hasPermission('equipmentView')) await fetchEquipmentData();
+    await fetchJobs();
     const defaultTab = hasPermission('consumablesView') ? 'consumables'
         : hasPermission('equipmentView') ? 'equipment'
-            : hasPermission('analyticsView') ? 'analytics' : 'users';
+            : hasPermission('analyticsView') ? 'analytics' : 'jobs';
     switchTab(defaultTab);
     if (!liveEvents) connectLiveUpdates();
 }
@@ -377,6 +390,7 @@ function switchTab(tabName) {
     const allowed = {
         consumables: hasPermission('consumablesView'),
         equipment: hasPermission('equipmentView'),
+        jobs: authState !== null,
         analytics: hasPermission('analyticsView'),
         users: authState?.isOwner === true
     };
@@ -386,6 +400,159 @@ function switchTab(tabName) {
     document.getElementById('tab-' + tabName).classList.add('active');
     document.getElementById('content-' + tabName).classList.add('active');
     if (tabName === 'users') loadUsers().catch(error => alert(error.message));
+}
+
+// ============================================================
+//  IT JOBS
+// ============================================================
+
+let allJobs = [];
+
+async function fetchJobs() {
+    const response = await fetch('/api/jobs');
+    const jobs = await response.json();
+    if (response.status === 401) {
+        await handleExpiredSession();
+        throw new Error('Your session has ended. Please sign in again.');
+    }
+    if (!response.ok || !Array.isArray(jobs)) throw new Error(jobs.message || 'Failed to load IT jobs.');
+    allJobs = jobs;
+    renderJobs();
+}
+
+function isJobManager() {
+    return authState?.role === 'owner' || authState?.role === 'admin';
+}
+
+function isJobOverdue(job, today = toDateInputValue(new Date())) {
+    return !['Completed', 'Cancelled'].includes(job.status) && job.followUpDate < today;
+}
+
+function renderJobs() {
+    const tbody = document.getElementById('jobTableBody');
+    const today = toDateInputValue(new Date());
+    const activeJobs = allJobs.filter(job => !['Completed', 'Cancelled'].includes(job.status));
+    const overdueCount = activeJobs.filter(job => isJobOverdue(job, today)).length;
+    const statusCounts = Object.fromEntries(JOB_STATUSES.map(status => [
+        status, allJobs.filter(job => job.status === status).length
+    ]));
+    document.getElementById('jobSummary').innerHTML = `
+        <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">Total: ${allJobs.length}</span>
+        <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Pending: ${statusCounts.Pending}</span>
+        <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">In progress: ${statusCounts['In Progress']}</span>
+        <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">Overdue: ${overdueCount}</span>`;
+
+    const search = document.getElementById('jobSearch').value.trim().toLowerCase();
+    const statusFilter = document.getElementById('jobStatusFilter').value;
+    const jobs = allJobs.filter(job => {
+        const searchable = [job.title, job.description, job.requestedBy, job.department, job.assignedTo]
+            .some(value => String(value || '').toLowerCase().includes(search));
+        const matchesStatus = !statusFilter ||
+            (statusFilter === 'overdue' ? isJobOverdue(job, today) : job.status === statusFilter);
+        return searchable && matchesStatus;
+    }).sort((a, b) => (a.followUpDate || '').localeCompare(b.followUpDate || '') ||
+        (b.dateFiled || '').localeCompare(a.dateFiled || ''));
+
+    tbody.innerHTML = '';
+    document.getElementById('jobEmptyState').classList.toggle('hidden', jobs.length > 0);
+    document.getElementById('jobActionsHeader').classList.toggle('hidden', !isJobManager());
+    jobs.forEach(job => {
+        const latestUpdate = Array.isArray(job.statusHistory) ? job.statusHistory[job.statusHistory.length - 1] : null;
+        const overdue = isJobOverdue(job, today);
+        const statusColors = {
+            Pending: 'bg-amber-100 text-amber-800',
+            'In Progress': 'bg-blue-100 text-blue-800',
+            'Waiting on Requester': 'bg-purple-100 text-purple-800',
+            'On Hold': 'bg-gray-200 text-gray-800',
+            Completed: 'bg-green-100 text-green-800',
+            Cancelled: 'bg-red-100 text-red-800'
+        };
+        const statusClass = statusColors[job.status] || 'bg-gray-100 text-gray-700';
+        const updateDetails = latestUpdate
+            ? `<span class="block text-xs text-gray-500">${escapeHtml(latestUpdate.changedAt ? new Date(latestUpdate.changedAt).toLocaleString() : '')} · ${escapeHtml(latestUpdate.changedBy || job.requestedBy || 'Unknown')}</span>
+                ${latestUpdate.note ? `<span class="mt-1 block whitespace-pre-line text-xs text-gray-600">${escapeHtml(latestUpdate.note)}</span>` : ''}`
+            : '';
+        tbody.innerHTML += `<tr>
+            <td class="border p-2 align-top">
+                <strong>${escapeHtml(job.title)}</strong>
+                <p class="mt-1 max-w-md whitespace-pre-line text-xs text-gray-600">${escapeHtml(job.description)}</p>
+            </td>
+            <td class="border p-2 align-top">${escapeHtml(job.requestedBy || 'Not recorded')}
+                ${job.department ? `<span class="block text-xs text-gray-500">${escapeHtml(job.department)}</span>` : ''}
+            </td>
+            <td class="border p-2 align-top">${escapeHtml(job.category)}
+                <span class="mt-1 block text-xs font-semibold ${job.priority === 'Urgent' ? 'text-red-700' : job.priority === 'High' ? 'text-orange-700' : 'text-gray-600'}">${escapeHtml(job.priority)}</span>
+            </td>
+            <td class="border p-2 text-center align-top">${formatDateOnly(job.dateFiled)}</td>
+            <td class="border p-2 text-center align-top ${overdue ? 'font-semibold text-red-700' : ''}">${formatDateOnly(job.followUpDate)}${overdue ? '<span class="block text-xs">Overdue</span>' : ''}</td>
+            <td class="border p-2 align-top">${escapeHtml(job.assignedTo || 'Unassigned')}</td>
+            <td class="border p-2 align-top">
+                <span class="rounded-full px-2 py-1 text-xs font-semibold ${statusClass}">${escapeHtml(job.status || 'Pending')}</span>
+                ${updateDetails}
+            </td>
+            <td class="border p-2 text-center align-top no-print ${isJobManager() ? '' : 'hidden'}">
+                <button type="button" data-job-action="status" data-job-id="${escapeHtml(job.id)}" class="whitespace-nowrap rounded border px-2 py-1 text-xs hover:bg-gray-50">Update status</button>
+            </td>
+        </tr>`;
+    });
+}
+
+function handleJobAction(event) {
+    const button = event.target.closest('[data-job-action="status"]');
+    if (!button || !isJobManager()) return;
+    const job = allJobs.find(entry => entry.id === button.dataset.jobId);
+    if (!job) return;
+    const form = document.getElementById('jobStatusForm');
+    form.elements.jobId.value = job.id;
+    form.elements.status.value = job.status || 'Pending';
+    form.elements.note.value = '';
+    document.getElementById('jobStatusTitle').textContent = job.title;
+    document.getElementById('jobStatusDialog').showModal();
+}
+
+async function fileNewJob(event) {
+    event.preventDefault();
+    const form = event.target;
+    const payload = Object.fromEntries(new FormData(form).entries());
+    try {
+        const response = await fetch('/api/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) return alert(result.message || 'Could not file the IT job.');
+        form.reset();
+        const followUpDate = new Date();
+        followUpDate.setDate(followUpDate.getDate() + 7);
+        form.elements.followUpDate.value = toDateInputValue(followUpDate);
+        const panelButton = document.querySelector('#addJobPanel').previousElementSibling;
+        if (panelButton.getAttribute('aria-expanded') === 'true') toggleFormPanel(panelButton);
+        await fetchJobs();
+    } catch (error) {
+        console.error('[IT jobs] Could not file the job:', error);
+        alert('Could not file the IT job. Check your connection and try again.');
+    }
+}
+
+async function saveJobStatus(event) {
+    event.preventDefault();
+    if (!isJobManager()) return alert('Only the owner or an administrator can change job status.');
+    const form = event.target;
+    try {
+        const response = await fetch(`/api/jobs/${encodeURIComponent(form.elements.jobId.value)}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: form.elements.status.value, note: form.elements.note.value })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) return alert(result.message || 'Could not update the IT job status.');
+        document.getElementById('jobStatusDialog').close();
+        await fetchJobs();
+    } catch (error) {
+        console.error('[IT jobs] Could not update job status:', error);
+        alert('Could not update the IT job status. Check your connection and try again.');
+    }
 }
 
 // ============================================================

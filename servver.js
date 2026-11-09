@@ -22,6 +22,9 @@ const PERMISSION_KEYS = [
     'consumablesView', 'consumablesRequest', 'consumablesAdd', 'consumablesStockManage',
     'equipmentView', 'equipmentAdd', 'equipmentManage', 'analyticsView'
 ];
+const JOB_STATUSES = ['Pending', 'In Progress', 'Waiting on Requester', 'On Hold', 'Completed', 'Cancelled'];
+const JOB_CATEGORIES = ['Hardware', 'Software', 'Network', 'Account / Access', 'Other'];
+const JOB_PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
 
 // Middleware
 app.use(express.json());
@@ -123,7 +126,7 @@ function readDB() {
     }
 
     console.error('[DB] ✘ All recovery failed. Starting with empty database.');
-    const emptyData = { items: [], requests: [], equipment: [], equipmentLogs: [], stockLogs: [] };
+    const emptyData = { items: [], requests: [], equipment: [], equipmentLogs: [], stockLogs: [], jobs: [] };
     writeDB(emptyData);
     return emptyData;
 }
@@ -136,6 +139,7 @@ function migrateDB(data) {
     if (!Array.isArray(data.equipment)) { data.equipment = []; changed = true; }
     if (!Array.isArray(data.equipmentLogs)) { data.equipmentLogs = []; changed = true; }
     if (!Array.isArray(data.stockLogs)) { data.stockLogs = []; changed = true; }
+    if (!Array.isArray(data.jobs)) { data.jobs = []; changed = true; }
     data.items.forEach(item => {
         if (!Number.isInteger(item.lowStockThreshold) || item.lowStockThreshold < 0) {
             item.lowStockThreshold = 5;
@@ -215,7 +219,8 @@ function createDailyBackup() {
         const hasData = (data.items && data.items.length > 0) ||
                         (data.requests && data.requests.length > 0) ||
                         (data.equipment && data.equipment.length > 0) ||
-                        (data.equipmentLogs && data.equipmentLogs.length > 0);
+                        (data.equipmentLogs && data.equipmentLogs.length > 0) ||
+                        (data.jobs && data.jobs.length > 0);
         if (!hasData) { console.log('[Backup] Skipping — database is empty.'); return; }
 
         const today = new Date().toISOString().split('T')[0];
@@ -1085,6 +1090,90 @@ app.get('/api/equipment/logs', requirePermission('equipmentView'), (req, res) =>
         const db = readDB();
         res.json(db.equipmentLogs);
     } catch (err) { res.status(500).json({ success: false, message: 'Failed to read logs.' }); }
+});
+
+// ============================================================
+//  API ROUTES — IT JOBS
+// ============================================================
+
+app.get('/api/jobs', requireAuthenticated, (req, res) => {
+    try {
+        res.json(readDB().jobs);
+    } catch (err) {
+        console.error('[API] Error reading jobs:', err.message);
+        res.status(500).json({ success: false, message: 'Failed to read IT jobs.' });
+    }
+});
+
+app.post('/api/jobs', requireAuthenticated, async (req, res) => {
+    await acquireWriteLock();
+    try {
+        const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
+        const description = typeof req.body.description === 'string' ? req.body.description.trim() : '';
+        const category = req.body.category;
+        const priority = req.body.priority;
+        const department = typeof req.body.department === 'string' ? req.body.department.trim() : '';
+        const assignedTo = typeof req.body.assignedTo === 'string' ? req.body.assignedTo.trim() : '';
+        const followUpDate = req.body.followUpDate;
+        if (title.length < 3 || title.length > 120 || !description || description.length > 3000 ||
+            !JOB_CATEGORIES.includes(category) || !JOB_PRIORITIES.includes(priority) ||
+            department.length > 100 || assignedTo.length > 80 || !isValidDateOnly(followUpDate)) {
+            return res.status(400).json({ success: false, message: 'Provide a job title (3–120 characters), description (up to 3000 characters), valid category, priority, and follow-up date. Department and assignee must fit their limits.' });
+        }
+
+        const db = readDB();
+        const now = new Date();
+        const timestamp = now.toISOString();
+        const job = {
+            id: crypto.randomUUID(),
+            title,
+            description,
+            category,
+            priority,
+            department,
+            assignedTo,
+            requestedBy: req.auth.username,
+            dateFiled: dateKey(now),
+            followUpDate,
+            status: 'Pending',
+            statusHistory: [{ status: 'Pending', note: '', changedBy: req.auth.username, changedAt: timestamp }],
+            createdAt: timestamp
+        };
+        db.jobs.push(job);
+        writeDB(db);
+        res.status(201).json({ success: true, job });
+    } catch (err) {
+        console.error('[API] Error filing IT job:', err.message);
+        res.status(500).json({ success: false, message: 'Failed to file IT job.' });
+    } finally { releaseWriteLock(); }
+});
+
+app.patch('/api/jobs/:id/status', requireAuthenticated, async (req, res) => {
+    if (!['owner', 'admin'].includes(req.auth.role)) {
+        return res.status(403).json({ success: false, code: 'forbidden', message: 'Only the owner or an administrator can change IT job status.' });
+    }
+    await acquireWriteLock();
+    try {
+        const status = req.body.status;
+        const note = typeof req.body.note === 'string' ? req.body.note.trim() : '';
+        if (!JOB_STATUSES.includes(status) || note.length > 1000) {
+            return res.status(400).json({ success: false, message: 'Choose a valid job status and keep the update note within 1000 characters.' });
+        }
+
+        const db = readDB();
+        const job = db.jobs.find(entry => entry.id === req.params.id);
+        if (!job) return res.status(404).json({ success: false, message: 'IT job not found.' });
+        const updatedAt = new Date().toISOString();
+        job.status = status;
+        if (!Array.isArray(job.statusHistory)) job.statusHistory = [];
+        job.statusHistory.push({ status, note, changedBy: req.auth.username, changedAt: updatedAt });
+        job.updatedAt = updatedAt;
+        writeDB(db);
+        res.json({ success: true, job });
+    } catch (err) {
+        console.error('[API] Error updating IT job status:', err.message);
+        res.status(500).json({ success: false, message: 'Failed to update IT job status.' });
+    } finally { releaseWriteLock(); }
 });
 
 // ============================================================

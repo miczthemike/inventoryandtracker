@@ -1,6 +1,6 @@
 # PROXY Plus IT Inventory & Equipment Tracker
 
-Web application for tracking consumable stock, requests, IT equipment deployments, returns, equipment activity, and inventory reports.
+Web application for tracking consumable stock, requests, IT equipment deployments, returns, IT jobs, equipment activity, and inventory reports.
 
 ## Features
 
@@ -8,6 +8,7 @@ Web application for tracking consumable stock, requests, IT equipment deployment
 - Consumable requests with requestor and department tracking.
 - Creator and processor attribution for consumable and equipment records, stock activity, requests, deployments, returns, and maintenance.
 - Equipment inventory, deployment and return history, due dates, maintenance, and status tracking.
+- Shared IT jobs board with filing details, priorities, follow-up dates, assignment, overdue reminders, and status history.
 - Search, filtering, analytics, date-range reports, and CSV export.
 - Live updates for signed-in users connected to the same server.
 - Owner-managed user accounts, roles, and page/action permissions.
@@ -35,6 +36,19 @@ node .\servver.js
 
 Open `http://localhost:3000` (or your selected port) in a browser. Keep the PowerShell window running while the server is in use.
 
+## Start automatically on Windows
+
+Use Windows Task Scheduler rather than the Startup folder so the server can start after a reboot even when nobody signs in:
+
+1. Open **Task Scheduler** and select **Create Task**.
+2. On **General**, give it a name such as `IT Inventory Server` and select **Run whether user is logged on or not**. Use an account that can access this project folder.
+3. On **Triggers**, add **At startup**.
+4. On **Actions**, add **Start a program**. Set **Program/script** to `C:\Windows\System32\cmd.exe`, **Add arguments** to `/c "C:\path\to\project\start-server.bat"` (replace the example with the actual path), and **Start in** to this project folder.
+5. On **Settings**, enable **Restart the task if it fails** and choose a restart delay, such as 1 minute.
+6. Save the task and enter the Windows account password if prompted. Right-click the task and select **Run** to test it.
+
+The batch file starts `servver.js` from the project folder and reports a non-zero server exit to Task Scheduler. Node.js must be installed and available on the system `PATH`. Keep this project folder and its data files in place. The scheduled task runs the server as the selected Windows account; ensure that account has permission to read and write the project folder, including `db.json`, `users.json`, and `uploads\`.
+
 ## First-time owner setup
 
 1. Start the server on the Windows server PC.
@@ -58,11 +72,13 @@ See [AUTHENTICATION.md](./AUTHENTICATION.md) for role, access, password, and HTT
 
 The server checks permissions on API requests as well as hiding unavailable pages and controls in the browser.
 
+All signed-in users can file and view IT jobs. Only the owner and administrators can change a job's status; each status update records who changed it, when, and an optional progress note.
+
 ## Data and backups
 
 The application stores its data beside `servver.js`:
 
-- `db.json`: inventory, requests, equipment, and activity.
+- `db.json`: inventory, requests, equipment, IT jobs, and activity.
 - `users.json`: account records and password hashes.
 - `uploads\`: uploaded inventory/equipment photos.
 - `db.bak.json` and `backups\`: database recovery copies.
