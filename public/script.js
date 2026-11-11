@@ -7,6 +7,8 @@ let usersCache = [];
 let liveEvents = null;
 let sessionCheckInProgress = false;
 const JOB_STATUSES = ['Pending', 'In Progress', 'Waiting on Requester', 'On Hold', 'Completed', 'Cancelled'];
+const PAGE_SIZE = 50;
+const paginationPages = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
@@ -27,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('equipmentTableBody').addEventListener('click', handleEquipmentAction);
     document.getElementById('inventoryTableBody').addEventListener('click', handleStockAction);
     document.getElementById('jobTableBody').addEventListener('click', handleJobAction);
+    document.addEventListener('click', handlePaginationAction);
 
     [
         ['inventorySearch', renderInventory],
@@ -34,13 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ['inventoryStockFilter', renderInventory],
         ['inventorySort', renderInventory],
         ['requestSearch', renderRequests],
-        ['equipmentSearch', renderEquipment],
-        ['equipmentCategoryFilter', renderEquipment],
-        ['equipmentStatusFilter', renderEquipment],
-        ['equipmentSort', renderEquipment],
-        ['activitySearch', renderEquipmentLogs],
-        ['activityActionFilter', renderEquipmentLogs],
-        ['activitySort', renderEquipmentLogs],
+        ['equipmentSearch', () => resetAndRender('equipment', renderEquipment)],
+        ['equipmentCategoryFilter', () => resetAndRender('equipment', renderEquipment)],
+        ['equipmentStatusFilter', () => resetAndRender('equipment', renderEquipment)],
+        ['equipmentSort', () => resetAndRender('equipment', renderEquipment)],
+        ['activitySearch', () => resetAndRender('equipmentLogs', renderEquipmentLogs)],
+        ['activityActionFilter', () => resetAndRender('equipmentLogs', renderEquipmentLogs)],
+        ['activitySort', () => resetAndRender('equipmentLogs', renderEquipmentLogs)],
         ['jobSearch', renderJobs],
         ['jobStatusFilter', renderJobs]
     ].forEach(([id, handler]) => {
@@ -135,6 +138,56 @@ async function refreshSharedData() {
 function toDateInputValue(date) {
     const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
     return localDate.toISOString().slice(0, 10);
+}
+
+function resetAndRender(pageKey, render) {
+    paginationPages[pageKey] = 1;
+    render();
+}
+
+function getPageItems(items, pageKey) {
+    const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    const page = Math.min(Math.max(1, paginationPages[pageKey] || 1), pageCount);
+    paginationPages[pageKey] = page;
+    return items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+}
+
+function renderPaginationControls(containerId, pageKey, totalItems) {
+    const container = document.getElementById(containerId);
+    const pageCount = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    const page = paginationPages[pageKey] || 1;
+    if (totalItems <= PAGE_SIZE) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const firstItem = (page - 1) * PAGE_SIZE + 1;
+    const lastItem = Math.min(page * PAGE_SIZE, totalItems);
+    container.innerHTML = `
+        <nav class="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="Table pagination">
+            <span class="text-gray-500">Showing ${firstItem}–${lastItem} of ${totalItems}</span>
+            <div class="flex items-center gap-2">
+                <button type="button" data-pagination-key="${pageKey}" data-pagination-page="${page - 1}" ${page === 1 ? 'disabled' : ''} class="rounded border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50">Previous</button>
+                <span class="text-gray-600">Page ${page} of ${pageCount}</span>
+                <button type="button" data-pagination-key="${pageKey}" data-pagination-page="${page + 1}" ${page === pageCount ? 'disabled' : ''} class="rounded border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50">Next</button>
+            </div>
+        </nav>`;
+}
+
+function handlePaginationAction(event) {
+    const button = event.target.closest('[data-pagination-key][data-pagination-page]');
+    if (!button || button.disabled) return;
+    const pageKey = button.dataset.paginationKey;
+    paginationPages[pageKey] = Number(button.dataset.paginationPage);
+    const renderers = {
+        equipment: renderEquipment,
+        equipmentLogs: renderEquipmentLogs,
+        reportItems: renderCurrentReport,
+        reportRequestors: renderCurrentReport,
+        reportStock: renderCurrentReport,
+        reportEquipment: renderCurrentReport
+    };
+    renderers[pageKey]?.();
 }
 
 function toggleFormPanel(button) {
@@ -450,8 +503,8 @@ function renderJobs() {
         const matchesStatus = !statusFilter ||
             (statusFilter === 'overdue' ? isJobOverdue(job, today) : job.status === statusFilter);
         return searchable && matchesStatus;
-    }).sort((a, b) => (a.followUpDate || '').localeCompare(b.followUpDate || '') ||
-        (b.dateFiled || '').localeCompare(a.dateFiled || ''));
+    }).sort((a, b) => (b.dateFiled || '').localeCompare(a.dateFiled || '') ||
+        (b.createdAt || '').localeCompare(a.createdAt || ''));
 
     tbody.innerHTML = '';
     document.getElementById('jobEmptyState').classList.toggle('hidden', jobs.length > 0);
@@ -871,13 +924,14 @@ function renderEquipment() {
         if (sort === 'location') return (a.currentLocation || '').localeCompare(b.currentLocation || '');
         return a.name.localeCompare(b.name);
     });
-    updateEquipmentTable(equipment);
+    updateEquipmentTable(getPageItems(equipment, 'equipment'), equipment.length);
 }
 
-function updateEquipmentTable(equipment) {
+function updateEquipmentTable(equipment, totalItems) {
     const tbody = document.getElementById('equipmentTableBody');
     const canManageEquipment = hasPermission('equipmentManage');
     tbody.innerHTML = '';
+    renderPaginationControls('equipmentPagination', 'equipment', totalItems);
     if (equipment.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${canManageEquipment ? 11 : 10}" class="border p-4 text-center text-gray-400">${allEquipment.length ? 'No equipment matches your filters.' : 'No equipment registered yet.'}</td></tr>`;
         return;
@@ -1046,12 +1100,13 @@ function renderEquipmentLogs() {
     }).sort((a, b) => sort === 'oldest'
         ? new Date(a.date) - new Date(b.date)
         : new Date(b.date) - new Date(a.date));
-    updateEquipmentLogTable(logs);
+    updateEquipmentLogTable(getPageItems(logs, 'equipmentLogs'), logs.length);
 }
 
-function updateEquipmentLogTable(logs) {
+function updateEquipmentLogTable(logs, totalItems) {
     const tbody = document.getElementById('equipmentLogBody');
     tbody.innerHTML = '';
+    renderPaginationControls('equipmentLogPagination', 'equipmentLogs', totalItems);
     if (logs.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="border p-4 text-center text-gray-400">${allEquipmentLogs.length ? 'No activity matches your filters.' : 'No activity logged yet.'}</td></tr>`;
         return;
@@ -1198,6 +1253,11 @@ async function generateReport({ silent = false } = {}) {
         return;
     }
     latestReportData = { cData, eData, startDate, endDate };
+    if (!silent) {
+        ['reportItems', 'reportRequestors', 'reportStock', 'reportEquipment'].forEach(key => {
+            paginationPages[key] = 1;
+        });
+    }
 
     document.getElementById('reportEmpty').classList.add('hidden');
     document.getElementById('reportContent').classList.remove('hidden');
@@ -1219,13 +1279,20 @@ async function generateReport({ silent = false } = {}) {
     renderLineChart('chartDaily', chartDaily, cData.dailyBreakdown.map(d => d.date), cData.dailyBreakdown.map(d => d.totalQuantity), 'Qty Consumed', (c) => { chartDaily = c; });
     renderDoughnutChart('chartByCategory', chartByCategory, cData.byCategory.map(c => c.category), cData.byCategory.map(c => c.totalQuantity), (c) => { chartByCategory = c; });
 
+    renderCurrentReport();
+}
+
+function renderCurrentReport() {
+    if (!latestReportData) return;
+    const { cData, eData } = latestReportData;
+
     // Item breakdown table
     const itemTbody = document.getElementById('rptItemTable');
     itemTbody.innerHTML = '';
     if (cData.byItem.length === 0) {
         itemTbody.innerHTML = '<tr><td colspan="3" class="border p-3 text-center text-gray-400">No consumption this period.</td></tr>';
     } else {
-        cData.byItem.forEach(i => {
+        getPageItems(cData.byItem, 'reportItems').forEach(i => {
             itemTbody.innerHTML += `<tr>
                 <td class="border p-2">${escapeHtml(i.itemName)}</td>
                 <td class="border p-2 text-center font-semibold">${i.totalQuantity}</td>
@@ -1233,6 +1300,7 @@ async function generateReport({ silent = false } = {}) {
             </tr>`;
         });
     }
+    renderPaginationControls('rptItemPagination', 'reportItems', cData.byItem.length);
 
     // Requestor breakdown table
     const requestorTbody = document.getElementById('rptRequestorTable');
@@ -1240,7 +1308,7 @@ async function generateReport({ silent = false } = {}) {
     if (cData.byRequestor.length === 0) {
         requestorTbody.innerHTML = '<tr><td colspan="5" class="border p-3 text-center text-gray-400">No consumption this period.</td></tr>';
     } else {
-        cData.byRequestor.forEach(r => {
+        getPageItems(cData.byRequestor, 'reportRequestors').forEach(r => {
             requestorTbody.innerHTML += `<tr>
                 <td class="border p-2">${escapeHtml(r.requestor)}</td>
                 <td class="border p-2">${escapeHtml(r.department)}</td>
@@ -1250,11 +1318,15 @@ async function generateReport({ silent = false } = {}) {
             </tr>`;
         });
     }
+    renderPaginationControls('rptRequestorPagination', 'reportRequestors', cData.byRequestor.length);
 
     // Stock snapshot
     const stockTbody = document.getElementById('rptStockTable');
     stockTbody.innerHTML = '';
-    cData.stockSnapshot.forEach(s => {
+    if (cData.stockSnapshot.length === 0) {
+        stockTbody.innerHTML = '<tr><td colspan="4" class="border p-3 text-center text-gray-400">No inventory items.</td></tr>';
+    }
+    getPageItems(cData.stockSnapshot, 'reportStock').forEach(s => {
         const statusLabel = s.currentStock <= 0 ? '<span class="text-red-600 font-bold">OUT OF STOCK</span>'
             : s.currentStock <= (s.lowStockThreshold ?? 5) ? '<span class="text-orange-500 font-semibold">Low Stock</span>'
             : '<span class="text-green-600">In Stock</span>';
@@ -1265,29 +1337,31 @@ async function generateReport({ silent = false } = {}) {
             <td class="border p-2 text-center">${statusLabel}</td>
         </tr>`;
     });
+    renderPaginationControls('rptStockPagination', 'reportStock', cData.stockSnapshot.length);
 
     // Equipment analytics
     if (eData.success) {
-        const s = eData.summary;
+        const summary = eData.summary;
         document.getElementById('eqAnalyticsSummary').innerHTML = `
-            <div class="bg-gray-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Total Equipment</p><p class="text-xl font-bold">${s.totalEquipment}</p></div>
-            <div class="bg-green-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Available</p><p class="text-xl font-bold text-green-600">${s.available}</p></div>
-            <div class="bg-red-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Deployed</p><p class="text-xl font-bold text-red-600">${s.checkedOut}</p></div>
-            <div class="bg-yellow-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Maintenance</p><p class="text-xl font-bold text-yellow-600">${s.maintenance}</p></div>
-            <div class="bg-pink-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Missing</p><p class="text-xl font-bold text-pink-700">${s.missing}</p></div>
+            <div class="bg-gray-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Total Equipment</p><p class="text-xl font-bold">${summary.totalEquipment}</p></div>
+            <div class="bg-green-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Available</p><p class="text-xl font-bold text-green-600">${summary.available}</p></div>
+            <div class="bg-red-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Deployed</p><p class="text-xl font-bold text-red-600">${summary.checkedOut}</p></div>
+            <div class="bg-yellow-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Maintenance</p><p class="text-xl font-bold text-yellow-600">${summary.maintenance}</p></div>
+            <div class="bg-pink-50 p-3 rounded text-center"><p class="text-xs text-gray-500">Missing</p><p class="text-xl font-bold text-pink-700">${summary.missing}</p></div>
         `;
         const eqTbody = document.getElementById('rptEqUsageTable');
         eqTbody.innerHTML = '';
         if (eData.mostUsed.length === 0) {
-        eqTbody.innerHTML = '<tr><td colspan="2" class="border p-3 text-center text-gray-400">No equipment deployments this period.</td></tr>';
+            eqTbody.innerHTML = '<tr><td colspan="2" class="border p-3 text-center text-gray-400">No equipment deployments this period.</td></tr>';
         } else {
-            eData.mostUsed.forEach(e => {
+            getPageItems(eData.mostUsed, 'reportEquipment').forEach(e => {
                 eqTbody.innerHTML += `<tr>
-                    <td class="border p-2">${e.name}</td>
+                    <td class="border p-2">${escapeHtml(e.name)}</td>
                     <td class="border p-2 text-center font-semibold">${e.checkouts}</td>
                 </tr>`;
             });
         }
+        renderPaginationControls('rptEqUsagePagination', 'reportEquipment', eData.mostUsed.length);
     }
 }
 
