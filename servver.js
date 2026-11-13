@@ -141,6 +141,14 @@ function migrateDB(data) {
     if (!Array.isArray(data.equipmentLogs)) { data.equipmentLogs = []; changed = true; }
     if (!Array.isArray(data.stockLogs)) { data.stockLogs = []; changed = true; }
     if (!Array.isArray(data.jobs)) { data.jobs = []; changed = true; }
+    if (!Array.isArray(data.assetRegister)) {
+        const register = JSON.parse(fs.readFileSync(ASSET_REGISTER_FILE, 'utf8'));
+        data.assetRegister = register.tabs.map(tab => ({
+            ...tab,
+            rows: tab.rows.map(row => ({ id: crypto.randomUUID(), ...row }))
+        }));
+        changed = true;
+    }
     data.items.forEach(item => {
         if (!Number.isInteger(item.lowStockThreshold) || item.lowStockThreshold < 0) {
             item.lowStockThreshold = 5;
@@ -221,7 +229,8 @@ function createDailyBackup() {
                         (data.requests && data.requests.length > 0) ||
                         (data.equipment && data.equipment.length > 0) ||
                         (data.equipmentLogs && data.equipmentLogs.length > 0) ||
-                        (data.jobs && data.jobs.length > 0);
+                        (data.jobs && data.jobs.length > 0) ||
+                        (data.assetRegister && data.assetRegister.some(tab => tab.rows.length > 0));
         if (!hasData) { console.log('[Backup] Skipping — database is empty.'); return; }
 
         const today = new Date().toISOString().split('T')[0];
@@ -772,12 +781,74 @@ app.post('/api/requests', requirePermission('consumablesRequest'), async (req, r
 
 app.get('/api/asset-register', requirePermission('equipmentView'), (req, res) => {
     try {
+        const db = readDB();
         const register = JSON.parse(fs.readFileSync(ASSET_REGISTER_FILE, 'utf8'));
+        register.tabs = db.assetRegister;
         res.json(register);
     } catch (err) {
         console.error('[API] Error reading asset register:', err.message);
         res.status(500).json({ success: false, message: 'Failed to read the asset register.' });
     }
+});
+
+function validateAssetRegisterRow(tab, input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+        return { error: 'Provide an asset record.' };
+    }
+    const allowedKeys = new Set(tab.columns.map(column => column.key));
+    if (Object.keys(input).some(key => !allowedKeys.has(key))) {
+        return { error: 'The asset record contains an unsupported field.' };
+    }
+    const row = {};
+    for (const column of tab.columns) {
+        const value = input[column.key] ?? '';
+        if (typeof value !== 'string' || value.length > 1000) {
+            return { error: `${column.label} must be text with at most 1000 characters.` };
+        }
+        row[column.key] = value.trim();
+    }
+    if (!row.location) return { error: 'Location is required.' };
+    if (tab.id === 'devices' && !row.type) return { error: 'Type of Item is required for devices.' };
+    return { row };
+}
+
+app.post('/api/asset-register/:tabId/rows', requirePermission('equipmentManage'), async (req, res) => {
+    await acquireWriteLock();
+    try {
+        const db = readDB();
+        const tab = db.assetRegister.find(item => item.id === req.params.tabId);
+        if (!tab) return res.status(404).json({ success: false, message: 'Asset register tab not found.' });
+        const validated = validateAssetRegisterRow(tab, req.body?.row);
+        if (validated.error) return res.status(400).json({ success: false, message: validated.error });
+
+        const record = { id: crypto.randomUUID(), ...validated.row };
+        tab.rows.push(record);
+        writeDB(db);
+        res.status(201).json({ success: true, record });
+    } catch (err) {
+        console.error('[API] Error adding asset register record:', err.message);
+        res.status(500).json({ success: false, message: 'Failed to add the asset register record.' });
+    } finally { releaseWriteLock(); }
+});
+
+app.put('/api/asset-register/:tabId/rows/:recordId', requirePermission('equipmentManage'), async (req, res) => {
+    await acquireWriteLock();
+    try {
+        const db = readDB();
+        const tab = db.assetRegister.find(item => item.id === req.params.tabId);
+        if (!tab) return res.status(404).json({ success: false, message: 'Asset register tab not found.' });
+        const record = tab.rows.find(item => item.id === req.params.recordId);
+        if (!record) return res.status(404).json({ success: false, message: 'Asset register record not found.' });
+        const validated = validateAssetRegisterRow(tab, req.body?.row);
+        if (validated.error) return res.status(400).json({ success: false, message: validated.error });
+
+        Object.assign(record, validated.row);
+        writeDB(db);
+        res.json({ success: true, record });
+    } catch (err) {
+        console.error('[API] Error updating asset register record:', err.message);
+        res.status(500).json({ success: false, message: 'Failed to update the asset register record.' });
+    } finally { releaseWriteLock(); }
 });
 
 // Get all equipment

@@ -546,9 +546,14 @@
                         <p id="assetRegisterSite" class="mt-1 text-sm text-gray-500"></p>
                         <p id="assetRegisterPreparedDate" class="text-sm text-gray-500"></p>
                     </div>
-                    <button id="printAssetRegisterButton" type="button" class="no-print rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
-                        Print / Save as PDF
-                    </button>
+                    <div class="no-print flex flex-wrap gap-2">
+                        <button id="addAssetRegisterRecordButton" type="button" class="hidden rounded border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">
+                            Add Record
+                        </button>
+                        <button id="printAssetRegisterButton" type="button" class="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
+                            Print / Save as PDF
+                        </button>
+                    </div>
                 </div>
 
                 <div id="assetRegisterPrintHeader" class="print-only mb-4">
@@ -573,6 +578,21 @@
                 </div>
             </section>
         </div>
+
+        <dialog id="assetRegisterRecordDialog" class="equipment-editor rounded-xl p-0 shadow-2xl backdrop:bg-gray-900/50">
+            <form id="assetRegisterRecordForm" class="space-y-4 p-6">
+                <input type="hidden" name="recordId">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 id="assetRegisterRecordDialogTitle" class="text-xl font-semibold text-gray-800">Asset Register Record</h2>
+                    <button type="button" id="closeAssetRegisterRecordDialog" aria-label="Close dialog" class="rounded px-2 py-1 text-gray-500 hover:bg-gray-100">✕</button>
+                </div>
+                <div id="assetRegisterRecordFields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="cancelAssetRegisterRecordButton" class="rounded border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="rounded px-4 py-2 text-sm text-white">Save Record</button>
+                </div>
+            </form>
+        </dialog>
 
         <!-- ================================================================ -->
         <!--  TAB 3: IT ONGOING & PENDING JOBS                                -->
