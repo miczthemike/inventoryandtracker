@@ -8,7 +8,7 @@ Web application for tracking consumable stock, requests, IT equipment deployment
 - Consumable requests with requestor and department tracking.
 - Creator and processor attribution for consumable and equipment records, stock activity, requests, deployments, returns, and maintenance.
 - Equipment inventory, deployment and return history, due dates, maintenance, and status tracking.
-- Workbook-based IT asset register for network/computer devices, televisions, telephones, CCTV, and locksets, with searchable, sortable lists, persistent add/edit controls, and printable reports.
+- Workbook-based IT asset register for network/computer devices, televisions, telephones, CCTV, and locksets, with searchable, sortable lists, persistent add/edit/delete controls, and printable reports.
 - Shared IT jobs board with filing details, priorities, follow-up dates, assignment, overdue reminders, and status history.
 - Search, filtering, analytics, date-range reports, and CSV export.
 - Live updates for signed-in users connected to the same server.
@@ -72,7 +72,7 @@ See [AUTHENTICATION.md](./AUTHENTICATION.md) for role, access, password, and HTT
 | Custom access | Owner-selected page and action permissions. |
 
 The server checks permissions on API requests as well as hiding unavailable pages and controls in the browser.
-Users with the `equipmentManage` permission can add and edit asset-register records. Register changes are stored in `db.json` and included in the database backups.
+Users with the `equipmentManage` permission can add, edit, and delete asset-register records. Register changes are stored in `db.json` and included in the database backups.
 
 All signed-in users can file and view IT jobs. Only the owner and administrators can change a job's status; each status update records who changed it, when, and an optional progress note.
 

@@ -851,6 +851,24 @@ app.put('/api/asset-register/:tabId/rows/:recordId', requirePermission('equipmen
     } finally { releaseWriteLock(); }
 });
 
+app.delete('/api/asset-register/:tabId/rows/:recordId', requirePermission('equipmentManage'), async (req, res) => {
+    await acquireWriteLock();
+    try {
+        const db = readDB();
+        const tab = db.assetRegister.find(item => item.id === req.params.tabId);
+        if (!tab) return res.status(404).json({ success: false, message: 'Asset register tab not found.' });
+        const recordIndex = tab.rows.findIndex(item => item.id === req.params.recordId);
+        if (recordIndex === -1) return res.status(404).json({ success: false, message: 'Asset register record not found.' });
+
+        tab.rows.splice(recordIndex, 1);
+        writeDB(db);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[API] Error deleting asset register record:', err.message);
+        res.status(500).json({ success: false, message: 'Failed to delete the asset register record.' });
+    } finally { releaseWriteLock(); }
+});
+
 // Get all equipment
 app.get('/api/equipment', requirePermission('equipmentView'), (req, res) => {
     try {

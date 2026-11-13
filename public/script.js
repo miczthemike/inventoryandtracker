@@ -609,7 +609,7 @@ function renderAssetRegister() {
         ? rows.map(row => `<tr>${tab.columns.map(column => {
             const value = row[column.key] || '—';
             return `<td class="border border-gray-300 p-2 align-top">${escapeHtml(value)}</td>`;
-        }).join('')}${canManage ? `<td class="no-print border border-gray-300 p-2 text-center"><button type="button" data-asset-register-action="edit" data-record-id="${escapeHtml(row.id)}" class="rounded border px-2 py-1 text-xs text-teal-800 hover:bg-teal-50" aria-label="Edit asset record">Edit</button></td>` : ''}</tr>`).join('')
+        }).join('')}${canManage ? `<td class="no-print border border-gray-300 p-2 text-center"><div class="flex justify-center gap-1"><button type="button" data-asset-register-action="edit" data-record-id="${escapeHtml(row.id)}" class="rounded border px-2 py-1 text-xs text-teal-800 hover:bg-teal-50" aria-label="Edit asset record">Edit</button><button type="button" data-asset-register-action="delete" data-record-id="${escapeHtml(row.id)}" class="rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50" aria-label="Delete asset record">Delete</button></div></td>` : ''}</tr>`).join('')
         : `<tr><td colspan="${tab.columns.length + (canManage ? 1 : 0)}" class="border border-gray-300 p-5 text-center text-gray-500">No matching records.</td></tr>`;
 
     document.getElementById('assetRegisterPanels').innerHTML = `
@@ -637,7 +637,33 @@ function handleAssetRegisterAction(event) {
         return;
     }
     const button = event.target.closest('[data-asset-register-action="edit"]');
-    if (button) openAssetRegisterEditor(button.dataset.recordId);
+    if (button) return openAssetRegisterEditor(button.dataset.recordId);
+    const deleteButton = event.target.closest('[data-asset-register-action="delete"]');
+    if (deleteButton) deleteAssetRegisterRecord(deleteButton.dataset.recordId);
+}
+
+async function deleteAssetRegisterRecord(recordId) {
+    if (!hasPermission('equipmentManage')) return;
+    const tab = assetRegisterData?.tabs.find(item => item.id === activeAssetRegisterTab);
+    const record = tab?.rows.find(item => item.id === recordId);
+    if (!tab || !record) return alert('Asset register record not found.');
+
+    const description = record.type || record.model || record.description || tab.title;
+    const location = record.location ? ` at ${record.location}` : '';
+    if (!confirm(`Delete ${description}${location} from the asset register? This cannot be undone.`)) return;
+
+    try {
+        const response = await fetch(
+            `/api/asset-register/${encodeURIComponent(tab.id)}/rows/${encodeURIComponent(recordId)}`,
+            { method: 'DELETE' }
+        );
+        const result = await response.json();
+        if (!response.ok || !result.success) return alert(result.message || 'Failed to delete the asset register record.');
+        await fetchAssetRegister();
+    } catch (error) {
+        console.error('[Asset register] Could not delete the record:', error);
+        alert('Could not delete the asset register record. Please try again.');
+    }
 }
 
 function openAssetRegisterEditor(recordId = '') {
