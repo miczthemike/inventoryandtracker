@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
+const ASSET_REGISTER_FILE = path.join(__dirname, 'asset-register.json');
 const DB_TEMP_FILE = path.join(__dirname, 'db.tmp.json');
 const DB_BACKUP_FILE = path.join(__dirname, 'db.bak.json');
 const AUTH_FILE = path.join(__dirname, 'users.json');
@@ -768,6 +769,16 @@ app.post('/api/requests', requirePermission('consumablesRequest'), async (req, r
 // ============================================================
 //  API ROUTES — IT EQUIPMENT TRACKER
 // ============================================================
+
+app.get('/api/asset-register', requirePermission('equipmentView'), (req, res) => {
+    try {
+        const register = JSON.parse(fs.readFileSync(ASSET_REGISTER_FILE, 'utf8'));
+        res.json(register);
+    } catch (err) {
+        console.error('[API] Error reading asset register:', err.message);
+        res.status(500).json({ success: false, message: 'Failed to read the asset register.' });
+    }
+});
 
 // Get all equipment
 app.get('/api/equipment', requirePermission('equipmentView'), (req, res) => {

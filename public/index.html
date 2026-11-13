@@ -57,6 +57,12 @@
         .live-update-status { color: #64748b; }
         .live-update-status.connected { color: #047857; }
         .live-update-status.disconnected { color: #b45309; }
+        .asset-register-tab.active {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary-dark);
+            background: var(--brand-light);
+        }
+        .asset-register-table { min-width: 760px; }
         .form-toggle {
             align-self: start;
             overflow: hidden;
@@ -139,6 +145,17 @@
             body { background: white; }
             body::before { display: none; }
             .dot-grid-background { display: none; }
+            body.printing-asset-register #appShell { max-width: none; padding: 0 !important; }
+            body.printing-asset-register #content-asset-register { display: block !important; }
+            body.printing-asset-register .asset-register-panel:not(.active) { display: none !important; }
+            body.printing-asset-register .asset-register-panel.active { display: block !important; }
+            body.printing-asset-register .asset-register-table { min-width: 0; font-size: 8pt; }
+            body.printing-asset-register .asset-register-table th,
+            body.printing-asset-register .asset-register-table td { padding: 4px; }
+        }
+        @page asset-register-page { size: landscape; margin: 10mm; }
+        @media print {
+            #content-asset-register { page: asset-register-page; }
         }
         .print-only { display: none; }
     </style>
@@ -168,6 +185,9 @@
             </button>
             <button onclick="switchTab('equipment')" id="tab-equipment" class="tab-btn px-5 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-500 hover:text-gray-700 transition-colors">
                 🖥️ IT Equipment
+            </button>
+            <button onclick="switchTab('asset-register')" id="tab-asset-register" class="tab-btn px-5 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                📋 IT Asset Register
             </button>
             <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-btn px-5 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-500 hover:text-gray-700 transition-colors">
                 🛠️ IT Ongoing &amp; Pending Jobs
@@ -516,6 +536,42 @@
                 </div>
                 <div id="equipmentLogPagination" class="no-print"></div>
             </div>
+        </div>
+
+        <div id="content-asset-register" class="tab-content">
+            <section class="bg-white p-5 md:p-6 rounded-lg shadow-md">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-700">IT Asset Register</h2>
+                        <p id="assetRegisterSite" class="mt-1 text-sm text-gray-500"></p>
+                        <p id="assetRegisterPreparedDate" class="text-sm text-gray-500"></p>
+                    </div>
+                    <button id="printAssetRegisterButton" type="button" class="no-print rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
+                        Print / Save as PDF
+                    </button>
+                </div>
+
+                <div id="assetRegisterPrintHeader" class="print-only mb-4">
+                    <h1 id="assetRegisterPrintTitle" class="text-lg font-bold"></h1>
+                    <p id="assetRegisterPrintBusinessUnit" class="text-sm"></p>
+                    <p id="assetRegisterPrintSite" class="text-sm"></p>
+                    <p id="assetRegisterPrintDate" class="text-sm"></p>
+                </div>
+
+                <p id="assetRegisterLoadStatus" class="mb-4 text-sm text-gray-500" role="status" aria-live="polite">Loading asset register…</p>
+                <div id="assetRegisterContent" class="hidden">
+                    <div id="assetRegisterSummary" class="mb-5 grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+                    <div id="assetRegisterNavigation" class="no-print mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Asset register categories"></div>
+                    <div class="no-print mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="assetRegisterSearch" type="search" placeholder="Search location, user, model, serial…" aria-label="Search current asset register" class="rounded border p-2">
+                        <select id="assetRegisterTypeFilter" aria-label="Filter device type" class="rounded border p-2">
+                            <option value="">All device types</option>
+                        </select>
+                        <p id="assetRegisterResultCount" class="self-center text-sm text-gray-500"></p>
+                    </div>
+                    <div id="assetRegisterPanels"></div>
+                </div>
+            </section>
         </div>
 
         <!-- ================================================================ -->

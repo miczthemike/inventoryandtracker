@@ -1,0 +1,3597 @@
+{
+  "businessUnit": "The Oriental Hospitality and Restaurant Management Services Inc.",
+  "siteName": "PROXY Plus by The Oriental Pangasinan",
+  "datePrepared": "November 4, 2026",
+  "source": "LKY-IT-F-05-00 IT Equipment Inventory 07312026.xlsx",
+  "tabs": [
+    {
+      "id": "devices",
+      "label": "Devices ? Network & Computers",
+      "title": "Devices",
+      "columns": [
+        {
+          "key": "location",
+          "label": "Department or Location"
+        },
+        {
+          "key": "currentUser",
+          "label": "Current user"
+        },
+        {
+          "key": "type",
+          "label": "Type of Item"
+        },
+        {
+          "key": "description",
+          "label": "Complete Description or Brand/Model/Ram/Storage"
+        },
+        {
+          "key": "serialNumber",
+          "label": "Serial Number"
+        },
+        {
+          "key": "condition",
+          "label": "Remarks / Status/ Current Condition"
+        }
+      ],
+      "rows": [
+        {
+          "location": "IT Department",
+          "currentUser": "Michael Joseph Paned",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Department",
+          "currentUser": "Server",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "HR",
+          "currentUser": "Crisanto Rarang",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Motherboard Problem used by Kitchen / UPS Not Working"
+        },
+        {
+          "location": "Security",
+          "currentUser": "SG Castillo",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Kristel Abarra",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Mercy Rabina",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "JC Vicente",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Warehouse",
+          "currentUser": "Freddie Espiritu",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Warehouse",
+          "currentUser": "John Reynald Nuevo",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Warehouse",
+          "currentUser": "John Paul Batalla",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "PSU Replaced"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Mar Jorge Flores",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Jonalyn Bacay",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B",
+          "currentUser": "Jesster Manglicmot",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good / Keyboard Replaced"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Housekeeping",
+          "currentUser": "Mary Ann Genese",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Kitchen",
+          "currentUser": "Crisanto Rarang",
+          "type": "PC Unit",
+          "description": "12th Gen Inter Core i5-12400 16GB RAM, 500Gb SSD, 1Tb HDD , 1 AOC Monitor, A4tech mouse and keyboard, APC UPS",
+          "serialNumber": "",
+          "condition": "Replaced PSU Defective / Motherboard Problem"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Mhardee De Leon",
+          "type": "PC Unit",
+          "description": "HP ProDesk 600 G2 SFF i7 6700 500Gb HDD 8Gb RAM /",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "SPA",
+          "currentUser": "Emma Janette Advincula",
+          "type": "PC Unit",
+          "description": "6th Gen Inter Core i5-6400 8GB RAM, 128Gb SSD, ViewPoint Monitor, 3D Optical Mouse, A4tech, APC UPS",
+          "serialNumber": "",
+          "condition": "Good / Monitor Replaced from HO"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "Lawrence Bristol",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "HR",
+          "currentUser": "Gene Ann Ragudos",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag / Wireless Mouse",
+          "serialNumber": "",
+          "condition": "Good / Mouse Not Working"
+        },
+        {
+          "location": "Executive Office",
+          "currentUser": "Aaron Reyes",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag / Mouse wired",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Warehouse",
+          "currentUser": "Aerose Zapanta",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag / Wireless Mouse",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Marketing",
+          "currentUser": "Allysa Danice Dela Cruz",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag / Wireless Mouse",
+          "serialNumber": "",
+          "condition": "Good / Mouse Not Working"
+        },
+        {
+          "location": "Sales",
+          "currentUser": "Maricel Alcantara",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag / Wired Mouse",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Sales",
+          "currentUser": "Shen Llamas",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Executive Office",
+          "currentUser": "J.R Demillo",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Kitchen",
+          "currentUser": "Jefford Sumoba",
+          "type": "Laptop",
+          "description": "Lenovo i3 12th Gen 8Gb RAM 512Gb Hdd / Laptop bag / Wireless Mouse",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Phone",
+          "description": "Samsung Keypad EI205",
+          "serialNumber": "",
+          "condition": "Good / Front Office use for Call & Text"
+        },
+        {
+          "location": "Warehouse",
+          "currentUser": "",
+          "type": "Phone",
+          "description": "Samsung Keypad EI205",
+          "serialNumber": "",
+          "condition": "Good / Return to HO"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Mhardee De Leon",
+          "type": "Phone",
+          "description": "Samsung Keypad EI205",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "Phone",
+          "description": "Samsung A06",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "HR",
+          "currentUser": "Gene Ann Ragudos",
+          "type": "Phone",
+          "description": "Samsung A06",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Phone",
+          "description": "Infinix Smart Pro 8",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Sales",
+          "currentUser": "Maricel Alcantara",
+          "type": "Phone",
+          "description": "Infinix Smart Pro 8",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "Tablet",
+          "description": "Lenovo M11",
+          "serialNumber": "HA20M5A0",
+          "condition": "Good"
+        },
+        {
+          "location": "Housekeeping",
+          "currentUser": "Mary Ann Genese",
+          "type": "Tablet",
+          "description": "Lenovo M11",
+          "serialNumber": "HA1YPLQ7",
+          "condition": "Good"
+        },
+        {
+          "location": "Marketing",
+          "currentUser": "Allysa Danice Dela Cruz",
+          "type": "Printer",
+          "description": "Epson L3250",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Jonalyn Bacay",
+          "type": "Printer",
+          "description": "Epson L3250",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "HR",
+          "currentUser": "Gene Ann Ragudos",
+          "type": "Printer",
+          "description": "Epson L3250",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "Printer",
+          "description": "Canon MF244DW / From Delsan",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "Erika Mae Segura",
+          "type": "Printer",
+          "description": "Canon MF244DW / From Delsan",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Sales",
+          "currentUser": "Catherine Magday",
+          "type": "Printer",
+          "description": "Canon MF244DW / From Delsan",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "Joan Dabu",
+          "type": "Printer",
+          "description": "Canon MF244DW / From Delsan",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Housekeeping",
+          "currentUser": "Mary Ann Genese",
+          "type": "Printer",
+          "description": "Canon MF237W / from HO / Delsan",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Warehouse",
+          "currentUser": "Aerose Zapanta",
+          "type": "Printer",
+          "description": "Canon MF237W / from HO / Delsan",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Ocean Grill",
+          "currentUser": "F&B",
+          "type": "POS",
+          "description": "POSTECH PT-CM-015",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Tawalisi",
+          "currentUser": "F&B",
+          "type": "POS",
+          "description": "POSTECH PT-CM-015",
+          "serialNumber": "",
+          "condition": "Leaks on Tawalisi reach POS motherboard"
+        },
+        {
+          "location": "F&B / Agtungtong",
+          "currentUser": "F&B",
+          "type": "POS",
+          "description": "POSTECH PT-CM-015",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Ocean Grill",
+          "currentUser": "F&B",
+          "type": "UPS",
+          "description": "PROLINK 7015FC 650VA",
+          "serialNumber": "",
+          "condition": "Not Working"
+        },
+        {
+          "location": "F&B / Tawalisi",
+          "currentUser": "F&B",
+          "type": "UPS",
+          "description": "PROLINK 7015FC 650VA",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Agtungtong",
+          "currentUser": "F&B",
+          "type": "UPS",
+          "description": "PROLINK 7015FC 650VA",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Ocean Grill",
+          "currentUser": "F&B",
+          "type": "Cash Drawer",
+          "description": "POSEIDON CD4141 CASH DRAWER",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Tawalisi",
+          "currentUser": "F&B",
+          "type": "Cash Drawer",
+          "description": "POSEIDON CD4141 CASH DRAWER",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Agtungtong",
+          "currentUser": "F&B",
+          "type": "Cash Drawer",
+          "description": "POSEIDON CD4141 CASH DRAWER",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Ocean Grill",
+          "currentUser": "F&B",
+          "type": "POS Printer",
+          "description": "Epson TM-T82X POS Thermal Receipt",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Tawalisi",
+          "currentUser": "F&B",
+          "type": "POS Printer",
+          "description": "Epson TM-T82X POS Thermal Receipt",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "F&B / Agtungtong",
+          "currentUser": "F&B",
+          "type": "POS Printer",
+          "description": "Epson TM-T82X POS Thermal Receipt",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Employee Entrance",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Internal Network",
+          "serialNumber": "G1TB0MU07641A",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7035912",
+          "condition": "Defective from 7th Floor"
+        },
+        {
+          "location": "HR",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Internal Network",
+          "serialNumber": "G1TC0D7054131",
+          "condition": "Good"
+        },
+        {
+          "location": "Sales",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Internal Network",
+          "serialNumber": "G1TC0D7055212",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "ES220GS-P / Internal Network",
+          "serialNumber": "G1TB0DE020981",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Gateway",
+          "description": "EG1510XS / Internal Network",
+          "serialNumber": "H1TB1FT00168C",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D703575A",
+          "condition": "Not Working / Liquid Damage on Ports from SB"
+        },
+        {
+          "location": "Ocean Grill",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7051969",
+          "condition": "Good"
+        },
+        {
+          "location": "Staffhouse",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7052940",
+          "condition": "Good"
+        },
+        {
+          "location": "Lobby",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7051264",
+          "condition": "Good"
+        },
+        {
+          "location": "Kitchen",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Internal Network",
+          "serialNumber": "G1TC0D7034046",
+          "condition": "Good"
+        },
+        {
+          "location": "4th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7033915",
+          "condition": "Good"
+        },
+        {
+          "location": "Cabana 1",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7052058",
+          "condition": "Good"
+        },
+        {
+          "location": "Cabana 2",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7054245",
+          "condition": "Good"
+        },
+        {
+          "location": "Cabana 3",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7035908",
+          "condition": "Good"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TA232017033",
+          "condition": "Good"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TA232018371",
+          "condition": "Good"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU02973B",
+          "condition": "Good"
+        },
+        {
+          "location": "4th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU076306",
+          "condition": "Good"
+        },
+        {
+          "location": "4th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU07638A",
+          "condition": "Good"
+        },
+        {
+          "location": "4th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU076310",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU029673",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU029576",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7023661",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7055609",
+          "condition": "Good"
+        },
+        {
+          "location": "2nd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7037191",
+          "condition": "Good"
+        },
+        {
+          "location": "2nd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D703469A",
+          "condition": "Good"
+        },
+        {
+          "location": "2nd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7021993",
+          "condition": "Good"
+        },
+        {
+          "location": "2nd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7026237",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Gateway",
+          "description": "EG1510XS / Guests Network",
+          "serialNumber": "H1TB1FT004466",
+          "condition": "Good"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "ES220GS-P / Guests Network",
+          "serialNumber": "G1T91V0000474",
+          "condition": "Good"
+        },
+        {
+          "location": "4th Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "ES220GS-P / Guests Network",
+          "serialNumber": "G1T91V0000314",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "ES220GS-P / Guests Network",
+          "serialNumber": "G1T91V000008A",
+          "condition": "Good"
+        },
+        {
+          "location": "2nd Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "ES220GS-P / Guests Network",
+          "serialNumber": "G1T91V0000432",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "ES220GS-P / Guests Network",
+          "serialNumber": "G1T91V0000495",
+          "condition": "Good"
+        },
+        {
+          "location": "Kitchen",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "ES220GS-P / Guests Network",
+          "serialNumber": "G1TB2SP00995A",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "NBS3200-24GT4XS-P / Guests Network",
+          "serialNumber": "G1TR7NS000254",
+          "condition": "Good"
+        },
+        {
+          "location": "4th Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "NBS3200-24GT4XS-P / Guests Network",
+          "serialNumber": "G1TR7NS00148B",
+          "condition": "Good"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "NBS3200-24GT4XS-P / Guests Network",
+          "serialNumber": "G1U10LN001949",
+          "condition": "Good"
+        },
+        {
+          "location": "2nd Floor",
+          "currentUser": "",
+          "type": "Switch",
+          "description": "NBS3200-48GT4XS-P / Guests Network",
+          "serialNumber": "G1TS54F000566",
+          "condition": "Water Damaged"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TC0D7036963",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "ZAT1038016927",
+          "condition": "Good"
+        },
+        {
+          "location": "Front Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Internal Network",
+          "serialNumber": "ZAT1038013380",
+          "condition": "Good"
+        },
+        {
+          "location": "LKY",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU02954B",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU03271A",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1TB0MU029627",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office / Lobby",
+          "currentUser": "",
+          "type": "TV Stand",
+          "description": "TV Stand 3 Pcs / for Events",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Projector",
+          "description": "Events Projector / Epson EB-E01 H971C",
+          "serialNumber": "X88V4Y01465",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Projector",
+          "description": "Events Projector / Epson EB-E01 H971C",
+          "serialNumber": "X88V4Y01541",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Projector",
+          "description": "Events Projector / Epson EB-E01 H971C",
+          "serialNumber": "X88V4Y01467",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI Splitter",
+          "description": "Vention / ACCG0/ACBG0 1x4 HDMI Splitter",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "HDMI 20 Meters",
+          "serialNumber": "",
+          "condition": "Not Working"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "HDMI 20 Meters",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "Vention HDMI 10 Meters",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "Vention HDMI 10 Meters",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Pointer",
+          "description": "Vention Wireless Pointer",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "HDMI 3 Meters",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "HDMI 3 Meters",
+          "serialNumber": "",
+          "condition": "Not Working"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Toolbox",
+          "description": "Multi Tools Set",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link 5 Port Switch",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link 5 Port Switch",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Warehouse",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link 5 Port Switch",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link 8 Port Switch",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI Splitter",
+          "description": "Generic Splitter",
+          "serialNumber": "",
+          "condition": "Not Working on Long Cables"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI Splitter",
+          "description": "Generic Splitter",
+          "serialNumber": "",
+          "condition": "Not Working on Long Cables"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Server",
+          "description": "HP Proliant DL20 Gen11 Intel Xeon E E-2434 64Gb RAM  2x 1Tb HDD",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "UPS",
+          "description": "INVT Tower Type Online UPS 1KVA 900W HT11015",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "CCTV Camera Switch NBS3200-48GT4XS-P",
+          "serialNumber": "",
+          "condition": "Good /some Ports Not Working due to Power interruptions"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "UPS",
+          "description": "KSTAR UPS 2 Sets",
+          "serialNumber": "",
+          "condition": "Unused (As per Sparktech it need 3 Sets to operate)"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link Gigabit POE Switch 5 Port",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link Gigabit POE Switch 5 Port",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link 10G Multi-Gigagbit Switch 8 Port",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Staffhouse",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Sampaguita Boardroom",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "TP-Link EAP225 from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "7th Floor",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link 8 Port Switch from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "6th Floor",
+          "currentUser": "",
+          "type": "Network Switch",
+          "description": "TP-Link 8 Port Switch from TOB",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "7th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1U40SK016336",
+          "condition": "Good"
+        },
+        {
+          "location": "7th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1U40SK043951",
+          "condition": "Good"
+        },
+        {
+          "location": "6th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1U40SK01665B",
+          "condition": "Good"
+        },
+        {
+          "location": "6th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1U40SK042634",
+          "condition": "Good"
+        },
+        {
+          "location": "6th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1U40SK043968",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Projector",
+          "description": "EPSON Projector From HO",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Projector",
+          "description": "EPSON Projector From HO",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "Vention 20M Cable",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI",
+          "description": "Vention 20M Cable",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "HDMI Wireless",
+          "description": "Vention Wireless HDMI",
+          "serialNumber": "",
+          "condition": "Good"
+        },
+        {
+          "location": "Marketing",
+          "currentUser": "Alvy Joy Ramirez",
+          "type": "Laptop",
+          "description": "MSI - Core i7, MS-16R1, 24Gb RAM from HO w/ A4tech Mouse",
+          "serialNumber": "K1809N0073804",
+          "condition": "Missing screws / Overheating Issues / Monitor Issues"
+        },
+        {
+          "location": "Engineering",
+          "currentUser": "Limuel Rosario",
+          "type": "Laptop",
+          "description": "HP i3 6th Gen 8Gb RAM 512Gb Hdd",
+          "serialNumber": "",
+          "condition": "WiFi connectivity problem / Slow Processing / Lagging"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "PC Unit",
+          "description": "",
+          "serialNumber": "",
+          "condition": "For Finance Department from HO / Defective"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "",
+          "type": "PC Unit",
+          "description": "",
+          "serialNumber": "",
+          "condition": "For Finance Department from HO"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "",
+          "type": "PC Unit",
+          "description": "",
+          "serialNumber": "",
+          "condition": "For Finance Department from HO"
+        },
+        {
+          "location": "Finance",
+          "currentUser": "",
+          "type": "PC Unit",
+          "description": "",
+          "serialNumber": "",
+          "condition": "For Finance Department from HO"
+        },
+        {
+          "location": "IT Office",
+          "currentUser": "",
+          "type": "Tablet",
+          "description": "Huawei Matepad AGRK-L9",
+          "serialNumber": "",
+          "condition": ""
+        },
+        {
+          "location": "Mayor's Suite",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50M2014308",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50M2014312",
+          "condition": "Good"
+        },
+        {
+          "location": "2nd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50M201434A",
+          "condition": "Good"
+        },
+        {
+          "location": "Mayor's Suite",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50M2014396",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50M2025659",
+          "condition": "Good"
+        },
+        {
+          "location": "3rd Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50M2025760",
+          "condition": "Good"
+        },
+        {
+          "location": "4th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50M2025777",
+          "condition": "Good"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ010711",
+          "condition": "Good"
+        },
+        {
+          "location": "5th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ010850",
+          "condition": "Good"
+        },
+        {
+          "location": "Legazpi Boardroom",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ010888",
+          "condition": "Good"
+        },
+        {
+          "location": "7th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ012227",
+          "condition": "Good"
+        },
+        {
+          "location": "7th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ012248",
+          "condition": "Good"
+        },
+        {
+          "location": "7th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ012556",
+          "condition": "Good"
+        },
+        {
+          "location": "7th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ025883",
+          "condition": "Good"
+        },
+        {
+          "location": "6th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ02589A",
+          "condition": "Good"
+        },
+        {
+          "location": "6th Floor",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ02603A",
+          "condition": "Good"
+        },
+        {
+          "location": "IT Room",
+          "currentUser": "",
+          "type": "Access Point",
+          "description": "RAP2260(G) / Guests Network",
+          "serialNumber": "G1V50PZ026065",
+          "condition": "Good / for Cafeteria"
+        }
+      ]
+    },
+    {
+      "id": "tv",
+      "label": "Television",
+      "title": "TV",
+      "columns": [
+        {
+          "key": "location",
+          "label": "Location"
+        },
+        {
+          "key": "brand",
+          "label": "Brand"
+        },
+        {
+          "key": "model",
+          "label": "Model"
+        },
+        {
+          "key": "size",
+          "label": "Size"
+        },
+        {
+          "key": "condition",
+          "label": "Condition"
+        },
+        {
+          "key": "status",
+          "label": "Status"
+        }
+      ],
+      "rows": [
+        {
+          "location": "Mayor's Suite",
+          "brand": "TCL",
+          "model": "50P71B",
+          "size": "50\"",
+          "condition": "Good",
+          "status": "Not yet deployed Mayor's Suite under construction"
+        },
+        {
+          "location": "Lobby",
+          "brand": "TCL",
+          "model": "50V6B",
+          "size": "50\"",
+          "condition": "Good",
+          "status": "TV Signage"
+        },
+        {
+          "location": "IT Room",
+          "brand": "TCL",
+          "model": "50V6B",
+          "size": "50\"",
+          "condition": "Good",
+          "status": "TV Signage"
+        },
+        {
+          "location": "IT Room",
+          "brand": "TCL",
+          "model": "50V6B",
+          "size": "50\"",
+          "condition": "Good",
+          "status": "TV Signage"
+        },
+        {
+          "location": "Security Room",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Sealed"
+        },
+        {
+          "location": "IT Room",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Sealed"
+        },
+        {
+          "location": "Room 201",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Currently on IT Room due to Room Leaks"
+        },
+        {
+          "location": "Room 202",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 203",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 204",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Currently on IT Room due to Room Leaks"
+        },
+        {
+          "location": "Room 205",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 206",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed / Remote Replaced"
+        },
+        {
+          "location": "Room 207",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 208",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 209",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 211",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 301",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 302",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 303",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 305",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 306",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 307",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 308",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 309",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 310",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 311",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 312",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 313",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 315",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 401",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 402",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed / Remote Replaced"
+        },
+        {
+          "location": "Room 403",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 405",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 406",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 407",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 408",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 409",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 410",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 411",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 412",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 413",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 415",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 501",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 502",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 503",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 505",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 506",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 507",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 508",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 509",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 510",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 511",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 512",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 513",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 515",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 601",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 602",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 603",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 605",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 606",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 607",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 608",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 609",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Not Working",
+          "status": "Water Damaged due to leaks"
+        },
+        {
+          "location": "Room 610",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Not Working",
+          "status": "Color Bleeding / Display Failure / Technical Report 02282026"
+        },
+        {
+          "location": "Room 611",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 612",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed / Transferred to 610"
+        },
+        {
+          "location": "Room 613",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 615",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 701",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Wifi Not working due to Room leaks"
+        },
+        {
+          "location": "Room 702",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 703",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 705",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 706",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed / Remote Replaced"
+        },
+        {
+          "location": "Room 707",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 708",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 709",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 710",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 711",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 712",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 713",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Room 715",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Cabana 1",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Cabana 2",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Cabana 3",
+          "brand": "TCL",
+          "model": "40S5400A",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Gym",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        },
+        {
+          "location": "Spa",
+          "brand": "TCL",
+          "model": "40S5k",
+          "size": "40\"",
+          "condition": "Good",
+          "status": "Deployed"
+        }
+      ]
+    },
+    {
+      "id": "telephone",
+      "label": "Telephone",
+      "title": "Telephone",
+      "columns": [
+        {
+          "key": "location",
+          "label": "Location"
+        },
+        {
+          "key": "brand",
+          "label": "Brand"
+        },
+        {
+          "key": "model",
+          "label": "Model"
+        },
+        {
+          "key": "condition",
+          "label": "Condition"
+        },
+        {
+          "key": "status",
+          "label": "Status"
+        }
+      ],
+      "rows": [
+        {
+          "location": "Room 201",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 202",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 203",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 204",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 205",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 206",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 207",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 208",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 209",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 211",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 301",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 302",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 303",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 305",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 306",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 307",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 308",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 309",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 310",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 311",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 312",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 313",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 315",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 401",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 402",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 403",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 405",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 406",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 407",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 408",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 409",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 410",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 411",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 412",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 413",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 415",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 501",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 502",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 503",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 505",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 506",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 507",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 508",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 509",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 510",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 511",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 512",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 513",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 515",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Cabana 1",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Cabana 2",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Cabana 3",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "IT Room",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "IT Room",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Warehouse",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Front desk",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Agtungtong",
+          "brand": "Fanvil",
+          "model": "X301P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 601",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 602",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 603",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 605",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 606",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 607",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 608",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 609",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 610",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 611",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 612",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 613",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 615",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 701",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 702",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 703",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 705",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 706",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 707",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 708",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 709",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 710",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 711",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 712",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 713",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 715",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "SPA",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "HK Office",
+          "brand": "Fanvil",
+          "model": "V50P",
+          "condition": "Good",
+          "status": "Working"
+        }
+      ]
+    },
+    {
+      "id": "cctv",
+      "label": "CCTV",
+      "title": "CCTV",
+      "columns": [
+        {
+          "key": "location",
+          "label": "Location"
+        },
+        {
+          "key": "brand",
+          "label": "Brand"
+        },
+        {
+          "key": "model",
+          "label": "Model"
+        },
+        {
+          "key": "condition",
+          "label": "Condition"
+        },
+        {
+          "key": "status",
+          "label": "Status"
+        }
+      ],
+      "rows": [
+        {
+          "location": "Employees Entrance",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Employees Entrance",
+          "brand": "HIKVISION",
+          "model": "Bullet Type",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Lobby",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Lobby",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Lobby",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Lobby",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Lobby",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Lobby",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "LKY Hall",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "LKY Hall",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "LKY Hall",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Legazpi Boardroom",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Bad",
+          "status": "Destroyed During Typhoon Emong"
+        },
+        {
+          "location": "Hallway LKY & LB",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Kitchen",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Kitchen",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Finance",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Ocean Grill",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Ocean Grill",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Gate Area",
+          "brand": "HIKVISION",
+          "model": "Bullet Type",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Pool",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Cabana",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Parking",
+          "brand": "HIKVISION",
+          "model": "Bullet Type",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "6th Hallway",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "6th Hallway",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "5th Hallway",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "5th Hallway",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "4th Hallway",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "4th Hallway",
+          "brand": "HIKVISION",
+          "model": "Acu Sense Network Camera",
+          "condition": "Good",
+          "status": "Working"
+        }
+      ]
+    },
+    {
+      "id": "lockset",
+      "label": "Lockset",
+      "title": "Lockset",
+      "columns": [
+        {
+          "key": "location",
+          "label": "Location"
+        },
+        {
+          "key": "brand",
+          "label": "Brand"
+        },
+        {
+          "key": "model",
+          "label": "Model"
+        },
+        {
+          "key": "condition",
+          "label": "Condition"
+        },
+        {
+          "key": "status",
+          "label": "Status"
+        }
+      ],
+      "rows": [
+        {
+          "location": "Room 201",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 202",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Bad",
+          "status": "Not Working"
+        },
+        {
+          "location": "Room 203",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 204",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 205",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 206",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working from 202"
+        },
+        {
+          "location": "Room 207",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 208",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 209",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 211",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 301",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Bad",
+          "status": "Not Working"
+        },
+        {
+          "location": "Room 302",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 303",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 305",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 306",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 307",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 308",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 309",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 310",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Bad",
+          "status": "Not Working"
+        },
+        {
+          "location": "Room 311",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 312",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 313",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 315",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 401",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 402",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 403",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 405",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 406",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 407",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 408",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 409",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 410",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 411",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 412",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 413",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 415",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 501",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 502",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 503",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 505",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 506",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 507",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 508",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 509",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 510",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 511",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 512",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 513",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 515",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 601",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 602",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 603",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 605",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 606",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 607",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 608",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 609",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Bad",
+          "status": "Not Working"
+        },
+        {
+          "location": "Room 610",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 611",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Can't use Deadbolt (DoubleLock) Door Jamb and Strike Plate Misaligned"
+        },
+        {
+          "location": "Room 612",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Transferred to 701"
+        },
+        {
+          "location": "Room 613",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 615",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 701",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / From 612"
+        },
+        {
+          "location": "Room 702",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working / Strike Plate from 612"
+        },
+        {
+          "location": "Room 703",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 705",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 706",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 707",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 708",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 709",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 710",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 711",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 712",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 713",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        },
+        {
+          "location": "Room 715",
+          "brand": "Be-Tech",
+          "model": "Be-Tech Guardian RFID Hotel Door Lock",
+          "condition": "Good",
+          "status": "Working"
+        }
+      ]
+    }
+  ]
+}

@@ -30,6 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('inventoryTableBody').addEventListener('click', handleStockAction);
     document.getElementById('jobTableBody').addEventListener('click', handleJobAction);
     document.addEventListener('click', handlePaginationAction);
+    document.getElementById('assetRegisterNavigation').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-asset-register-tab]');
+        if (button) switchAssetRegisterTab(button.dataset.assetRegisterTab);
+    });
+    document.getElementById('assetRegisterSearch').addEventListener('input', renderAssetRegister);
+    document.getElementById('assetRegisterTypeFilter').addEventListener('change', renderAssetRegister);
+    document.getElementById('printAssetRegisterButton').addEventListener('click', printAssetRegister);
+    window.addEventListener('afterprint', () => document.body.classList.remove('printing-asset-register'));
 
     [
         ['inventorySearch', renderInventory],
@@ -122,7 +130,10 @@ function setLiveUpdateStatus(message, state) {
 async function refreshSharedData() {
     const tasks = [];
     if (hasPermission('consumablesView')) tasks.push(fetchConsumableData());
-    if (hasPermission('equipmentView')) tasks.push(fetchEquipmentData());
+    if (hasPermission('equipmentView')) {
+        tasks.push(fetchEquipmentData());
+        tasks.push(fetchAssetRegister());
+    }
     if (authState) tasks.push(fetchJobs());
     const results = await Promise.allSettled(tasks);
     const failed = results.find(result => result.status === 'rejected');
@@ -259,7 +270,10 @@ async function enterApplication() {
     document.body.classList.remove('app-pending');
 
     if (hasPermission('consumablesView')) await fetchConsumableData();
-    if (hasPermission('equipmentView')) await fetchEquipmentData();
+    if (hasPermission('equipmentView')) {
+        await fetchEquipmentData();
+        await fetchAssetRegister();
+    }
     await fetchJobs();
     const defaultTab = hasPermission('consumablesView') ? 'consumables'
         : hasPermission('equipmentView') ? 'equipment'
@@ -271,6 +285,7 @@ async function enterApplication() {
 function applyAccessControls() {
     document.getElementById('tab-consumables').classList.toggle('hidden', !hasPermission('consumablesView'));
     document.getElementById('tab-equipment').classList.toggle('hidden', !hasPermission('equipmentView'));
+    document.getElementById('tab-asset-register').classList.toggle('hidden', !hasPermission('equipmentView'));
     document.getElementById('tab-analytics').classList.toggle('hidden', !hasPermission('analyticsView'));
     document.getElementById('tab-users').classList.toggle('hidden', !authState.isOwner);
     document.getElementById('addItemPanel').closest('.form-toggle').classList.toggle('hidden', !hasPermission('consumablesAdd'));
@@ -443,6 +458,7 @@ function switchTab(tabName) {
     const allowed = {
         consumables: hasPermission('consumablesView'),
         equipment: hasPermission('equipmentView'),
+        'asset-register': hasPermission('equipmentView'),
         jobs: authState !== null,
         analytics: hasPermission('analyticsView'),
         users: authState?.isOwner === true
@@ -453,6 +469,132 @@ function switchTab(tabName) {
     document.getElementById('tab-' + tabName).classList.add('active');
     document.getElementById('content-' + tabName).classList.add('active');
     if (tabName === 'users') loadUsers().catch(error => alert(error.message));
+}
+
+// ============================================================
+//  WORKBOOK-BASED ASSET REGISTER
+// ============================================================
+
+let assetRegisterData = null;
+let activeAssetRegisterTab = 'devices';
+
+async function fetchAssetRegister() {
+    const status = document.getElementById('assetRegisterLoadStatus');
+    status.classList.remove('text-red-600');
+    status.textContent = 'Loading asset register…';
+
+    try {
+        const response = await fetch('/api/asset-register');
+        if (response.status === 401) {
+            await handleExpiredSession();
+            return;
+        }
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to load the asset register.');
+        if (!data || !Array.isArray(data.tabs) || data.tabs.length === 0) {
+            throw new Error('The asset register workbook contains no inventory tabs.');
+        }
+
+        assetRegisterData = data;
+        document.getElementById('assetRegisterSite').textContent = data.siteName || '';
+        document.getElementById('assetRegisterPreparedDate').textContent =
+            data.datePrepared ? `Date prepared: ${data.datePrepared}` : '';
+        document.getElementById('assetRegisterPrintBusinessUnit').textContent = data.businessUnit || '';
+        document.getElementById('assetRegisterPrintSite').textContent = data.siteName || '';
+        document.getElementById('assetRegisterPrintDate').textContent =
+            data.datePrepared ? `Date prepared: ${data.datePrepared}` : '';
+
+        renderAssetRegisterSummary();
+        renderAssetRegisterNavigation();
+        populateAssetRegisterTypeFilter();
+        document.getElementById('assetRegisterContent').classList.remove('hidden');
+        status.textContent = '';
+        switchAssetRegisterTab(activeAssetRegisterTab);
+    } catch (error) {
+        console.error('[Asset register] Could not load the workbook inventory:', error);
+        status.textContent = `Unable to load the asset register: ${error.message}`;
+        status.classList.add('text-red-600');
+    }
+}
+
+function renderAssetRegisterSummary() {
+    const summary = document.getElementById('assetRegisterSummary');
+    summary.innerHTML = assetRegisterData.tabs.map(tab => `
+        <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <p class="text-xs text-gray-500">${escapeHtml(tab.label)}</p>
+            <p class="mt-1 text-xl font-semibold text-gray-800">${tab.rows.length}</p>
+        </div>
+    `).join('');
+}
+
+function renderAssetRegisterNavigation() {
+    document.getElementById('assetRegisterNavigation').innerHTML = assetRegisterData.tabs.map(tab => `
+        <button type="button" role="tab" data-asset-register-tab="${escapeHtml(tab.id)}"
+            aria-selected="${tab.id === activeAssetRegisterTab}"
+            class="asset-register-tab rounded border px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 ${tab.id === activeAssetRegisterTab ? 'active' : ''}">
+            ${escapeHtml(tab.label)} <span class="ml-1 text-xs">(${tab.rows.length})</span>
+        </button>
+    `).join('');
+}
+
+function populateAssetRegisterTypeFilter() {
+    const select = document.getElementById('assetRegisterTypeFilter');
+    const devices = assetRegisterData.tabs.find(tab => tab.id === 'devices');
+    const types = [...new Set((devices?.rows || []).map(row => row.type).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+    select.innerHTML = '<option value="">All device types</option>' +
+        types.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('');
+}
+
+function switchAssetRegisterTab(tabId) {
+    const tab = assetRegisterData?.tabs.find(item => item.id === tabId);
+    if (!tab) return;
+    activeAssetRegisterTab = tabId;
+    document.getElementById('assetRegisterSearch').value = '';
+    document.getElementById('assetRegisterTypeFilter').value = '';
+    document.getElementById('assetRegisterTypeFilter').classList.toggle('hidden', tab.id !== 'devices');
+    renderAssetRegisterNavigation();
+    document.getElementById('assetRegisterPrintTitle').textContent = `${tab.title} Asset Inventory`;
+    renderAssetRegister();
+}
+
+function renderAssetRegister() {
+    if (!assetRegisterData) return;
+    const tab = assetRegisterData.tabs.find(item => item.id === activeAssetRegisterTab);
+    if (!tab) return;
+    const query = document.getElementById('assetRegisterSearch').value.trim().toLowerCase();
+    const type = document.getElementById('assetRegisterTypeFilter').value;
+    const rows = tab.rows.filter(row => {
+        const matchesQuery = !query || Object.values(row).some(value => String(value || '').toLowerCase().includes(query));
+        return matchesQuery && (!type || row.type === type);
+    });
+    document.getElementById('assetRegisterResultCount').textContent =
+        `Showing ${rows.length} of ${tab.rows.length} ${tab.rows.length === 1 ? 'record' : 'records'}`;
+
+    const headings = tab.columns.map(column => `<th scope="col" class="border border-gray-300 bg-gray-100 p-2 text-left">${escapeHtml(column.label)}</th>`).join('');
+    const body = rows.length
+        ? rows.map(row => `<tr>${tab.columns.map(column => {
+            const value = row[column.key] || '—';
+            return `<td class="border border-gray-300 p-2 align-top">${escapeHtml(value)}</td>`;
+        }).join('')}</tr>`).join('')
+        : `<tr><td colspan="${tab.columns.length}" class="border border-gray-300 p-5 text-center text-gray-500">No matching records.</td></tr>`;
+
+    document.getElementById('assetRegisterPanels').innerHTML = `
+        <section class="asset-register-panel active" role="tabpanel">
+            <h3 class="mb-3 text-lg font-semibold text-gray-700">${escapeHtml(tab.title)} Inventory</h3>
+            <div class="overflow-x-auto">
+                <table class="asset-register-table w-full border-collapse border border-gray-300 text-sm">
+                    <thead><tr>${headings}</tr></thead>
+                    <tbody>${body}</tbody>
+                </table>
+            </div>
+        </section>`;
+}
+
+function printAssetRegister() {
+    if (!assetRegisterData) return;
+    document.body.classList.add('printing-asset-register');
+    window.print();
 }
 
 // ============================================================
