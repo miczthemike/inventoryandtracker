@@ -37,6 +37,18 @@ node .\servver.js
 
 Open `http://localhost:3000` (or your selected port) in a browser. Keep the PowerShell window running while the server is in use.
 
+## Telegram IT job notifications
+
+The server can send an alert when an IT job is filed or its status changes, and send a daily report of open jobs (excluding Completed and Cancelled). Overdue follow-ups are sent as a separate grouped daily alert until the jobs are completed or cancelled. Reports run at **09:00 Asia/Manila** by default and include the title, status, priority, follow-up date, and assignee; full job descriptions are not sent.
+
+Configure these environment variables for the Windows account that runs the server:
+
+- `TELEGRAM_BOT_TOKEN`: the bot token from BotFather. Keep it secret and never commit or share it.
+- `ALLOWED_CHAT_IDS`: comma-separated private or group chat IDs authorized to receive notifications.
+- `TELEGRAM_DAILY_REPORT_TIME`: optional 24-hour time in `HH:MM` format, using Asia/Manila time. Defaults to `09:00`.
+
+The bot must be started by each private chat or added to each group before it can message that chat. If Telegram configuration is missing or invalid, the rest of the application continues to run without Telegram notifications. Delivery errors are written to the server log without logging the bot token.
+
 ## Start automatically on Windows
 
 Use Windows Task Scheduler rather than the Startup folder so the server can start after a reboot even when nobody signs in:
