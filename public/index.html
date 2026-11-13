@@ -848,6 +848,16 @@
             <div class="mb-6 rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm text-teal-900">
                 Only the owner account can access this page. Administrators can use all inventory features but cannot manage users or reset passwords.
             </div>
+            <section class="mb-6 rounded-lg bg-white p-6 shadow-md">
+                <h2 class="text-xl font-semibold text-gray-700">Telegram IT Job Reports</h2>
+                <p class="mt-1 text-sm text-gray-600">Send the current open-jobs report and any overdue follow-ups to the configured Telegram chats. This does not change the scheduled report.</p>
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                    <button id="sendTelegramReportsButton" type="button" class="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">
+                        Send Telegram reports now
+                    </button>
+                    <p id="telegramReportStatus" class="text-sm text-gray-600" role="status" aria-live="polite"></p>
+                </div>
+            </section>
             <div class="mb-6 rounded-lg bg-white p-6 shadow-md">
                 <h2 class="mb-4 text-xl font-semibold text-gray-700">Create User</h2>
                 <form id="userCreateForm" class="space-y-4">

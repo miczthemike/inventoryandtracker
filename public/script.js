@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('userCreateForm').addEventListener('submit', createUser);
     document.getElementById('userCreateForm').elements.role.addEventListener('change', updateCreatePermissionVisibility);
+    document.getElementById('sendTelegramReportsButton').addEventListener('click', sendTelegramReportsNow);
     document.getElementById('userTableBody').addEventListener('click', handleUserAction);
     document.getElementById('userEditForm').elements.role.addEventListener('change', updateEditPermissionVisibility);
     document.getElementById('userEditForm').addEventListener('submit', saveUserAccess);
@@ -357,6 +358,31 @@ async function loadUsers() {
     if (!response.ok || !Array.isArray(users)) throw new Error(users.message || 'Unable to load users.');
     usersCache = users;
     renderUsers();
+}
+
+async function sendTelegramReportsNow() {
+    if (!authState?.isOwner) return;
+    const button = document.getElementById('sendTelegramReportsButton');
+    const status = document.getElementById('telegramReportStatus');
+    button.disabled = true;
+    status.classList.remove('text-red-600');
+    status.textContent = 'Sending reports to configured Telegram chats…';
+    try {
+        const response = await fetch('/api/telegram/reports/send', { method: 'POST' });
+        const result = await response.json();
+        if (response.status === 401) {
+            await handleExpiredSession();
+            return;
+        }
+        if (!response.ok || !result.success) throw new Error(result.message || 'Could not send Telegram reports.');
+        status.textContent = result.message;
+    } catch (error) {
+        console.error('[Telegram] Could not send reports manually:', error);
+        status.textContent = error.message || 'Could not send Telegram reports.';
+        status.classList.add('text-red-600');
+    } finally {
+        button.disabled = false;
+    }
 }
 
 function renderUsers() {

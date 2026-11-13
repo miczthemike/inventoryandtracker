@@ -784,6 +784,43 @@ app.get('/api/users', isOwner, (req, res) => {
     res.json(readAuthStore().users.map(safeUser));
 });
 
+let manualTelegramReportInProgress = false;
+app.post('/api/telegram/reports/send', isOwner, async (req, res) => {
+    if (!TELEGRAM_CONFIG) {
+        return res.status(503).json({ success: false, message: 'Telegram is not configured on the server.' });
+    }
+    if (manualTelegramReportInProgress) {
+        return res.status(409).json({ success: false, message: 'A Telegram report is already being sent.' });
+    }
+
+    manualTelegramReportInProgress = true;
+    try {
+        const { date } = getManilaDateTime();
+        const data = readDB();
+        const overdueReport = createTelegramOverdueReport(data.jobs, date);
+        const messages = [...createTelegramDailyReport(data.jobs, date), ...overdueReport];
+        let deliveredChats = 0;
+        for (const chatId of TELEGRAM_CONFIG.chatIds) {
+            if (await sendTelegramMessagesToChat(chatId, messages)) deliveredChats += 1;
+        }
+        if (deliveredChats !== TELEGRAM_CONFIG.chatIds.length) {
+            return res.status(502).json({
+                success: false,
+                message: `Reports were sent to ${deliveredChats} of ${TELEGRAM_CONFIG.chatIds.length} configured chats. Check the server log for delivery errors.`
+            });
+        }
+        return res.json({
+            success: true,
+            message: `Open-jobs report${overdueReport.length ? ' and overdue follow-up alert' : ''} sent to ${deliveredChats} configured chat(s).`
+        });
+    } catch (error) {
+        console.error('[Telegram] Manual report trigger failed:', error.message);
+        return res.status(500).json({ success: false, message: 'Could not generate or send Telegram reports.' });
+    } finally {
+        manualTelegramReportInProgress = false;
+    }
+});
+
 app.post('/api/users', isOwner, (req, res) => {
     const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
     const role = req.body.role;

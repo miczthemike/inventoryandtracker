@@ -39,7 +39,7 @@ Open `http://localhost:3000` (or your selected port) in a browser. Keep the Powe
 
 ## Telegram IT job notifications
 
-The server can send an alert when an IT job is filed or its status changes, and send a daily report of open jobs (excluding Completed and Cancelled). Overdue follow-ups are sent as a separate grouped daily alert until the jobs are completed or cancelled. Reports run at **09:00 Asia/Manila** by default and include the title, status, priority, follow-up date, and assignee; full job descriptions are not sent.
+The server can send an alert when an IT job is filed or its status changes, and send a daily report of open jobs (excluding Completed and Cancelled). Overdue follow-ups are sent as a separate grouped daily alert until the jobs are completed or cancelled. Reports run at **09:00 Asia/Manila** by default and include the title, status, priority, follow-up date, and assignee; full job descriptions are not sent. The owner can also manually send the current reports from **User Management**; manual sends do not affect the scheduled reports.
 
 Configure these environment variables for the Windows account that runs the server:
 
