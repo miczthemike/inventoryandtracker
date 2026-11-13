@@ -31,7 +31,11 @@
         },
         {
           "key": "condition",
-          "label": "Remarks / Status/ Current Condition"
+          "label": "Remarks / Condition"
+        },
+        {
+          "key": "assetStatus",
+          "label": "Status"
         }
       ],
       "rows": [
@@ -1496,6 +1500,10 @@
         },
         {
           "key": "status",
+          "label": "Deployment / Notes"
+        },
+        {
+          "key": "assetStatus",
           "label": "Status"
         }
       ],
@@ -2213,6 +2221,10 @@
         },
         {
           "key": "status",
+          "label": "Deployment / Notes"
+        },
+        {
+          "key": "assetStatus",
           "label": "Status"
         }
       ],
@@ -2837,6 +2849,10 @@
         },
         {
           "key": "status",
+          "label": "Deployment / Notes"
+        },
+        {
+          "key": "assetStatus",
           "label": "Status"
         }
       ],
@@ -3062,6 +3078,10 @@
         },
         {
           "key": "status",
+          "label": "Deployment / Notes"
+        },
+        {
+          "key": "assetStatus",
           "label": "Status"
         }
       ],

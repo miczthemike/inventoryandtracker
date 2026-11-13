@@ -26,6 +26,7 @@ const PERMISSION_KEYS = [
 const JOB_STATUSES = ['Pending', 'In Progress', 'Waiting on Requester', 'On Hold', 'Completed', 'Cancelled'];
 const JOB_CATEGORIES = ['Hardware', 'Software', 'Network', 'Account / Access', 'Other'];
 const JOB_PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
+const ASSET_STATUSES = ['Good', 'Under Maintenance', 'Needs Repair', 'Not Working'];
 
 // Middleware
 app.use(express.json());
@@ -149,6 +150,29 @@ function migrateDB(data) {
         }));
         changed = true;
     }
+    data.assetRegister.forEach(tab => {
+        const assetStatusColumn = tab.columns.find(column => column.key === 'assetStatus');
+        if (!assetStatusColumn) {
+            tab.columns.push({ key: 'assetStatus', label: 'Status' });
+            changed = true;
+        }
+        const notesStatusColumn = tab.columns.find(column => column.key === 'status');
+        if (notesStatusColumn && notesStatusColumn.label === 'Status') {
+            notesStatusColumn.label = 'Deployment / Notes';
+            changed = true;
+        }
+        const conditionColumn = tab.columns.find(column => column.key === 'condition');
+        if (tab.id === 'devices' && conditionColumn && conditionColumn.label === 'Remarks / Status/ Current Condition') {
+            conditionColumn.label = 'Remarks / Condition';
+            changed = true;
+        }
+        tab.rows.forEach(row => {
+            if (!ASSET_STATUSES.includes(row.assetStatus)) {
+                row.assetStatus = inferAssetStatus(row.condition, row.status);
+                changed = true;
+            }
+        });
+    });
     data.items.forEach(item => {
         if (!Number.isInteger(item.lowStockThreshold) || item.lowStockThreshold < 0) {
             item.lowStockThreshold = 5;
@@ -163,6 +187,14 @@ function migrateDB(data) {
     });
     if (changed) writeDB(data);
     return data;
+}
+
+function inferAssetStatus(condition, currentStatus) {
+    const value = `${condition || ''} ${currentStatus || ''}`.toLowerCase();
+    if (/under maintenance/.test(value)) return 'Under Maintenance';
+    if (/not working|defective|broken|inoperable|out of order/.test(value)) return 'Not Working';
+    if (/problem|damage|repair|fault|issue|\bbad\b/.test(value)) return 'Needs Repair';
+    return 'Good';
 }
 
 function isValidDateOnly(value) {
@@ -801,7 +833,9 @@ function validateAssetRegisterRow(tab, input) {
     }
     const row = {};
     for (const column of tab.columns) {
-        const value = input[column.key] ?? '';
+        const value = column.key === 'assetStatus' && input.assetStatus === undefined
+            ? inferAssetStatus(input.condition, input.status)
+            : input[column.key] ?? '';
         if (typeof value !== 'string' || value.length > 1000) {
             return { error: `${column.label} must be text with at most 1000 characters.` };
         }
@@ -809,6 +843,9 @@ function validateAssetRegisterRow(tab, input) {
     }
     if (!row.location) return { error: 'Location is required.' };
     if (tab.id === 'devices' && !row.type) return { error: 'Type of Item is required for devices.' };
+    if (!ASSET_STATUSES.includes(row.assetStatus)) {
+        return { error: `Status must be one of: ${ASSET_STATUSES.join(', ')}.` };
+    }
     return { row };
 }
 

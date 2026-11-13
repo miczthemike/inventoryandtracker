@@ -606,10 +606,19 @@ function renderAssetRegister() {
     }).join('');
     const canManage = hasPermission('equipmentManage');
     const body = rows.length
-        ? rows.map(row => `<tr>${tab.columns.map(column => {
-            const value = row[column.key] || '—';
-            return `<td class="border border-gray-300 p-2 align-top">${escapeHtml(value)}</td>`;
-        }).join('')}${canManage ? `<td class="no-print border border-gray-300 p-2 text-center"><div class="flex justify-center gap-1"><button type="button" data-asset-register-action="edit" data-record-id="${escapeHtml(row.id)}" class="rounded border px-2 py-1 text-xs text-teal-800 hover:bg-teal-50" aria-label="Edit asset record">Edit</button><button type="button" data-asset-register-action="delete" data-record-id="${escapeHtml(row.id)}" class="rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50" aria-label="Delete asset record">Delete</button></div></td>` : ''}</tr>`).join('')
+        ? rows.map(row => {
+            const rowStatus = String(row.assetStatus || 'Good').toLowerCase();
+            const rowClass = rowStatus === 'good'
+                ? 'asset-register-row-good'
+                : rowStatus === 'under maintenance'
+                    ? 'asset-register-row-maintenance'
+                    : 'asset-register-row-alert';
+            return `<tr class="${rowClass}">${tab.columns.map(column => {
+                const value = row[column.key] || '—';
+                const statusClass = column.key === 'assetStatus' ? 'asset-register-status' : '';
+                return `<td class="border border-gray-300 p-2 align-top ${statusClass}">${escapeHtml(value)}</td>`;
+            }).join('')}${canManage ? `<td class="no-print border border-gray-300 p-2 text-center"><div class="flex justify-center gap-1"><button type="button" data-asset-register-action="edit" data-record-id="${escapeHtml(row.id)}" class="rounded border px-2 py-1 text-xs text-teal-800 hover:bg-teal-50" aria-label="Edit asset record">Edit</button><button type="button" data-asset-register-action="delete" data-record-id="${escapeHtml(row.id)}" class="rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50" aria-label="Delete asset record">Delete</button></div></td>` : ''}</tr>`;
+        }).join('')
         : `<tr><td colspan="${tab.columns.length + (canManage ? 1 : 0)}" class="border border-gray-300 p-5 text-center text-gray-500">No matching records.</td></tr>`;
 
     document.getElementById('assetRegisterPanels').innerHTML = `
@@ -680,9 +689,15 @@ function openAssetRegisterEditor(recordId = '') {
     document.getElementById('assetRegisterRecordFields').innerHTML = tab.columns.map(column => {
         const required = column.key === 'location' || (tab.id === 'devices' && column.key === 'type');
         const value = escapeHtml(record?.[column.key] || '');
-        const control = column.key === 'description'
-            ? `<textarea id="asset-register-${escapeHtml(column.key)}" name="${escapeHtml(column.key)}" maxlength="1000" rows="3" class="mt-1 w-full rounded border p-2">${value}</textarea>`
-            : `<input id="asset-register-${escapeHtml(column.key)}" name="${escapeHtml(column.key)}" type="text" maxlength="1000" value="${value}" class="mt-1 w-full rounded border p-2" ${required ? 'required' : ''}>`;
+        const control = column.key === 'assetStatus'
+            ? `<select id="asset-register-${escapeHtml(column.key)}" name="${escapeHtml(column.key)}" class="mt-1 w-full rounded border p-2" required>
+                ${['Good', 'Under Maintenance', 'Needs Repair', 'Not Working'].map(status =>
+                    `<option value="${status}" ${record?.[column.key] === status ? 'selected' : ''}>${status}</option>`
+                ).join('')}
+            </select>`
+            : column.key === 'description'
+                ? `<textarea id="asset-register-${escapeHtml(column.key)}" name="${escapeHtml(column.key)}" maxlength="1000" rows="3" class="mt-1 w-full rounded border p-2">${value}</textarea>`
+                : `<input id="asset-register-${escapeHtml(column.key)}" name="${escapeHtml(column.key)}" type="text" maxlength="1000" value="${value}" class="mt-1 w-full rounded border p-2" ${required ? 'required' : ''}>`;
         return `<label for="asset-register-${escapeHtml(column.key)}" class="block text-sm text-gray-700">${escapeHtml(column.label)}${required ? ' <span aria-hidden="true">*</span>' : ''}${control}</label>`;
     }).join('');
     document.getElementById('assetRegisterRecordDialog').showModal();
