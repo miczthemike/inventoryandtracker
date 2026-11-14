@@ -849,14 +849,42 @@
                 Only the owner account can access this page. Administrators can use all inventory features but cannot manage users or reset passwords.
             </div>
             <section class="mb-6 rounded-lg bg-white p-6 shadow-md">
-                <h2 class="text-xl font-semibold text-gray-700">Telegram IT Job Reports</h2>
-                <p class="mt-1 text-sm text-gray-600">Send the current open-jobs report and any overdue follow-ups to the configured Telegram chats. This does not change the scheduled report.</p>
+                <h2 class="text-xl font-semibold text-gray-700">Telegram Reports</h2>
+                <p class="mt-1 text-sm text-gray-600">Send the current inventory and open-jobs report, including overdue follow-ups, to the configured Telegram chats. This does not change the scheduled report.</p>
                 <div class="mt-4 flex flex-wrap items-center gap-3">
                     <button id="sendTelegramReportsButton" type="button" class="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">
                         Send Telegram reports now
                     </button>
                     <p id="telegramReportStatus" class="text-sm text-gray-600" role="status" aria-live="polite"></p>
                 </div>
+            </section>
+            <section class="mb-6 rounded-lg bg-white p-6 shadow-md">
+                <h2 class="text-xl font-semibold text-gray-700">Telegram Bot Responses &amp; Templates</h2>
+                <p class="mt-1 text-sm text-gray-600">Customize plain-text bot replies and job alerts. Commands work only in the configured allowed chats.</p>
+                <form id="telegramSettingsForm" class="mt-4 space-y-4">
+                    <label class="block text-sm text-gray-700">Welcome and help reply (<code>/start</code>, <code>/help</code>)
+                        <textarea name="helpResponse" maxlength="1000" rows="3" required class="mt-1 w-full rounded border p-2"></textarea>
+                    </label>
+                    <label class="block text-sm text-gray-700">Unknown command reply
+                        <textarea name="unknownCommandResponse" maxlength="500" rows="2" required class="mt-1 w-full rounded border p-2"></textarea>
+                    </label>
+                    <label class="block text-sm text-gray-700">New job alert
+                        <textarea name="newJobTemplate" maxlength="1500" rows="4" required class="mt-1 w-full rounded border p-2"></textarea>
+                        <span class="text-xs text-gray-500">Available placeholders: {title}, {status}, {priority}, {followUpDate}, {assignedTo}, {requestedBy}</span>
+                    </label>
+                    <label class="block text-sm text-gray-700">Job status-change alert
+                        <textarea name="statusChangeTemplate" maxlength="1500" rows="4" required class="mt-1 w-full rounded border p-2"></textarea>
+                        <span class="text-xs text-gray-500">Available placeholders: {title}, {status}, {priority}, {followUpDate}, {assignedTo}, {requestedBy}</span>
+                    </label>
+                    <label class="block text-sm text-gray-700">Daily report heading
+                        <input name="dailyReportHeader" maxlength="300" required class="mt-1 w-full rounded border p-2">
+                        <span class="text-xs text-gray-500">Available placeholders: {date}, {openJobs}</span>
+                    </label>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button id="saveTelegramSettingsButton" type="submit" class="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">Save Telegram settings</button>
+                        <p id="telegramSettingsStatus" class="text-sm text-gray-600" role="status" aria-live="polite"></p>
+                    </div>
+                </form>
             </section>
             <div class="mb-6 rounded-lg bg-white p-6 shadow-md">
                 <h2 class="mb-4 text-xl font-semibold text-gray-700">Create User</h2>

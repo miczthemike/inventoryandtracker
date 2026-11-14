@@ -39,7 +39,9 @@ Open `http://localhost:3000` (or your selected port) in a browser. Keep the Powe
 
 ## Telegram IT job notifications
 
-The server can send an alert when an IT job is filed or its status changes, and send a daily report of open jobs (excluding Completed and Cancelled). Overdue follow-ups are sent as a separate grouped daily alert until the jobs are completed or cancelled. Reports run at **09:00 Asia/Manila** by default and include the title, status, priority, follow-up date, and assignee; full job descriptions are not sent. The owner can also manually send the current reports from **User Management**; manual sends do not affect the scheduled reports.
+The server can send an alert when an IT job is filed or its status changes. At **09:00 Asia/Manila** by default, it sends a daily report with every consumable and its quantity, deployed and missing IT equipment, and open IT jobs (excluding Completed and Cancelled). Overdue follow-ups are also sent as a separate grouped daily alert until the jobs are completed or cancelled. Full job descriptions are not sent. The owner can manually send the current reports from **User Management** without affecting the scheduled reports.
+
+The bot supports `/start` and `/help` (customizable welcome response), `/report` (the combined inventory and jobs report), and `/jobs` (open IT jobs). It responds only in the configured allowed chats. The owner can edit the command responses, job alert templates, and daily report heading from **User Management**. Templates are plain text; supported placeholders are shown beside each field.
 
 Configure these environment variables for the Windows account that runs the server:
 
@@ -48,6 +50,8 @@ Configure these environment variables for the Windows account that runs the serv
 - `TELEGRAM_DAILY_REPORT_TIME`: optional 24-hour time in `HH:MM` format, using Asia/Manila time. Defaults to `09:00`.
 
 The bot must be started by each private chat or added to each group before it can message that chat. If Telegram configuration is missing or invalid, the rest of the application continues to run without Telegram notifications. Delivery errors are written to the server log without logging the bot token.
+
+Incoming commands use long polling, which requires this system to be the bot's only update receiver. If Telegram reports that a webhook is active, remove that webhook before enabling command replies.
 
 ## Start automatically on Windows
 

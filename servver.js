@@ -28,6 +28,20 @@ const JOB_STATUSES = ['Pending', 'In Progress', 'Waiting on Requester', 'On Hold
 const JOB_CATEGORIES = ['Hardware', 'Software', 'Network', 'Account / Access', 'Other'];
 const JOB_PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
 const ASSET_STATUSES = ['Good', 'Under Maintenance', 'Needs Repair', 'Not Working'];
+const DEFAULT_TELEGRAM_SETTINGS = {
+    helpResponse: 'Welcome to the IT Inventory bot.\nUse /report for the latest inventory and job report, or /jobs for open IT jobs.',
+    unknownCommandResponse: 'I do not recognize that command. Send /help to see available commands.',
+    newJobTemplate: 'New IT job filed: {title}\nStatus: {status}\nPriority: {priority}\nFollow-up: {followUpDate}\nAssigned to: {assignedTo}\nRequested by: {requestedBy}',
+    statusChangeTemplate: 'IT job status changed: {title}\nStatus: {status}\nPriority: {priority}\nFollow-up: {followUpDate}\nAssigned to: {assignedTo}\nRequested by: {requestedBy}',
+    dailyReportHeader: 'IT inventory and jobs report — {date}\nOpen IT jobs: {openJobs}'
+};
+const TELEGRAM_SETTING_PLACEHOLDERS = {
+    helpResponse: [],
+    unknownCommandResponse: [],
+    newJobTemplate: ['title', 'status', 'priority', 'followUpDate', 'assignedTo', 'requestedBy'],
+    statusChangeTemplate: ['title', 'status', 'priority', 'followUpDate', 'assignedTo', 'requestedBy'],
+    dailyReportHeader: ['date', 'openJobs']
+};
 const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
 const telegramChatIdsValue = (process.env.ALLOWED_CHAT_IDS || '').trim();
 const telegramChatIds = telegramChatIdsValue
@@ -242,11 +256,11 @@ function getManilaDateTime(date = new Date()) {
     };
 }
 
-function sendTelegramMessage(chatId, text) {
+function telegramApiRequest(method, payload, timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
-        const body = JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true });
+        const body = JSON.stringify(payload);
         const request = https.request(
-            `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`,
+            `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/${method}`,
             {
                 method: 'POST',
                 headers: {
@@ -266,16 +280,28 @@ function sendTelegramMessage(chatId, text) {
                         return reject(new Error('Telegram returned an invalid response.'));
                     }
                     if (response.statusCode < 200 || response.statusCode >= 300 || !result.ok) {
-                        return reject(new Error(result.description || `Telegram returned HTTP ${response.statusCode}.`));
+                        const error = new Error(result.description || `Telegram returned HTTP ${response.statusCode}.`);
+                        error.telegramErrorCode = result.error_code || response.statusCode;
+                        return reject(error);
                     }
-                    resolve();
+                    resolve(result.result);
                 });
             }
         );
-        request.setTimeout(10000, () => request.destroy(new Error('Telegram request timed out.')));
+        request.setTimeout(timeoutMs, () => request.destroy(new Error('Telegram request timed out.')));
         request.on('error', reject);
         request.end(body);
     });
+}
+
+function sendTelegramMessage(chatId, text) {
+    return telegramApiRequest('sendMessage', { chat_id: chatId, text, disable_web_page_preview: true });
+}
+
+function logTelegramError(context, error) {
+    const safeMessage = String(error.message || 'Unknown delivery error.')
+        .split(TELEGRAM_CONFIG.token).join('[redacted]');
+    console.error(`[Telegram] ${context}: ${safeMessage}`);
 }
 
 async function sendTelegramMessagesToChat(chatId, messages) {
@@ -284,56 +310,155 @@ async function sendTelegramMessagesToChat(chatId, messages) {
         try {
             await sendTelegramMessage(chatId, message);
         } catch (error) {
-            const safeMessage = String(error.message || 'Unknown delivery error.')
-                .split(TELEGRAM_CONFIG.token).join('[redacted]');
-            console.error(`[Telegram] Could not send to chat ${chatId}: ${safeMessage}`);
+            logTelegramError(`Could not send to chat ${chatId}`, error);
             delivered = false;
         }
     }
     return delivered;
 }
 
-function notifyTelegramAboutJob(job, heading) {
+function getTelegramSettings(data) {
+    const savedSettings = data.telegramSettings || {};
+    return Object.fromEntries(Object.keys(DEFAULT_TELEGRAM_SETTINGS).map(key => [
+        key,
+        typeof savedSettings[key] === 'string' ? savedSettings[key] : DEFAULT_TELEGRAM_SETTINGS[key]
+    ]));
+}
+
+function validateTelegramSettings(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+        return { error: 'Provide Telegram settings.' };
+    }
+    if (Object.keys(input).some(key => !Object.prototype.hasOwnProperty.call(DEFAULT_TELEGRAM_SETTINGS, key))) {
+        return { error: 'Telegram settings contain an unsupported field.' };
+    }
+
+    const limits = {
+        helpResponse: 1000,
+        unknownCommandResponse: 500,
+        newJobTemplate: 1500,
+        statusChangeTemplate: 1500,
+        dailyReportHeader: 300
+    };
+    const settings = {};
+    for (const [key, limit] of Object.entries(limits)) {
+        const value = input[key];
+        if (typeof value !== 'string' || !value.trim() || value.length > limit) {
+            return { error: `${key} must contain text with at most ${limit} characters.` };
+        }
+        const placeholders = [...value.matchAll(/\{([^{}]+)\}/g)].map(match => match[1]);
+        const invalidPlaceholders = placeholders.filter(name => !TELEGRAM_SETTING_PLACEHOLDERS[key].includes(name));
+        if (invalidPlaceholders.length) {
+            return { error: `${key} contains unsupported placeholder(s): ${invalidPlaceholders.join(', ')}.` };
+        }
+        settings[key] = value.trim();
+    }
+    return { settings };
+}
+
+function fillTelegramTemplate(template, values) {
+    return template.replace(/\{([A-Za-z]+)\}/g, (placeholder, key) =>
+        Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : placeholder
+    );
+}
+
+function notifyTelegramAboutJob(job, templateKey, settings) {
     if (!TELEGRAM_CONFIG) return;
-    const message = [
-        heading,
-        job.title,
-        `Status: ${job.status || 'Pending'}`,
-        `Priority: ${job.priority || '—'}`,
-        `Follow-up: ${job.followUpDate || '—'}`,
-        `Assigned to: ${job.assignedTo || 'Unassigned'}`,
-        `Requested by: ${job.requestedBy || 'Unknown'}`
-    ].join('\n');
+    const message = fillTelegramTemplate(settings[templateKey], {
+        title: job.title,
+        status: job.status || 'Pending',
+        priority: job.priority || '—',
+        followUpDate: job.followUpDate || '—',
+        assignedTo: job.assignedTo || 'Unassigned',
+        requestedBy: job.requestedBy || 'Unknown'
+    });
     TELEGRAM_CONFIG.chatIds.forEach(chatId => {
         void sendTelegramMessagesToChat(chatId, [message]);
     });
 }
 
-function createTelegramDailyReport(jobs, date) {
+function chunkTelegramReport(lines) {
+    const title = lines[0] || '';
+    const messages = [];
+    let currentMessage = title;
+    const appendLine = line => {
+        let remaining = line;
+        while (remaining.length > 3000) {
+            const part = remaining.slice(0, 3000);
+            const nextMessage = `${currentMessage}\n${part}`;
+            if (nextMessage.length > 3500 && currentMessage.length > title.length) {
+                messages.push(currentMessage);
+                currentMessage = `${title} (continued)`;
+            }
+            currentMessage += `\n${part}`;
+            messages.push(currentMessage);
+            currentMessage = `${title} (continued)`;
+            remaining = remaining.slice(3000);
+        }
+        const nextMessage = `${currentMessage}\n${remaining}`;
+        if (nextMessage.length > 3500 && currentMessage.length > title.length) {
+            messages.push(currentMessage);
+            currentMessage = `${title} (continued)`;
+        }
+        currentMessage += `\n${remaining}`;
+    };
+    lines.slice(1).forEach(appendLine);
+    if (currentMessage) messages.push(currentMessage);
+    return messages;
+}
+
+function formatTelegramJob(job, date) {
+    const overdue = job.followUpDate && job.followUpDate < date ? ' — OVERDUE' : '';
+    return [
+        `${job.title}`,
+        `Status: ${job.status || 'Pending'} | Priority: ${job.priority || '—'}`,
+        `Follow-up: ${job.followUpDate || '—'}${overdue}`,
+        `Assigned to: ${job.assignedTo || 'Unassigned'}`
+    ].join('\n');
+}
+
+function createTelegramDailyReport(data, date, settings = getTelegramSettings(data)) {
+    const openJobs = data.jobs
+        .filter(job => !['Completed', 'Cancelled'].includes(job.status))
+        .sort((a, b) => (a.followUpDate || '').localeCompare(b.followUpDate || ''));
+    const consumables = data.items.slice().sort((a, b) => a.name.localeCompare(b.name));
+    const deployed = data.equipment.filter(item => item.status === 'checked-out');
+    const missing = data.equipment.filter(item => item.status === 'missing');
+    const lines = [
+        fillTelegramTemplate(settings.dailyReportHeader, { date, openJobs: openJobs.length }),
+        '',
+        `CONSUMABLES (${consumables.length})`,
+        ...(consumables.length ? consumables.map(item => {
+            const threshold = item.lowStockThreshold ?? 5;
+            const stockNote = item.quantity <= 0 ? ' — OUT OF STOCK'
+                : item.quantity <= threshold ? ' — LOW STOCK' : '';
+            return `• ${item.name} (${item.category}): ${item.quantity}${stockNote}`;
+        }) : ['No consumables recorded.']),
+        '',
+        `DEPLOYED IT EQUIPMENT (${deployed.length})`,
+        ...(deployed.length ? deployed.map(item =>
+            `• ${item.name} — ${item.borrower || 'No borrower'} (${item.department || 'No department'}), ${item.currentLocation || 'Location unknown'}, due ${item.dueDate || 'No due date'}`
+        ) : ['No equipment currently deployed.']),
+        '',
+        `MISSING IT EQUIPMENT (${missing.length})`,
+        ...(missing.length ? missing.map(item =>
+            `• ${item.name} — last location: ${item.currentLocation || item.homeLocation || 'Unknown'}`
+        ) : ['No missing equipment.']),
+        '',
+        `OPEN IT JOBS (${openJobs.length})`,
+        ...(openJobs.length ? openJobs.map((job, index) => `${index + 1}. ${formatTelegramJob(job, date)}`) : ['No open IT jobs.'])
+    ];
+    return chunkTelegramReport(lines);
+}
+
+function createTelegramJobsReport(jobs, date) {
     const openJobs = jobs
         .filter(job => !['Completed', 'Cancelled'].includes(job.status))
         .sort((a, b) => (a.followUpDate || '').localeCompare(b.followUpDate || ''));
-    const heading = `IT jobs — daily open report (${date})\nOpen jobs: ${openJobs.length}`;
-    if (!openJobs.length) return [`${heading}\n\nNo open IT jobs.`];
-
-    const messages = [];
-    let currentMessage = heading;
-    openJobs.forEach((job, index) => {
-        const overdue = job.followUpDate && job.followUpDate < date ? ' — OVERDUE' : '';
-        const details = [
-            `${index + 1}. ${job.title}`,
-            `Status: ${job.status || 'Pending'} | Priority: ${job.priority || '—'}`,
-            `Follow-up: ${job.followUpDate || '—'}${overdue}`,
-            `Assigned to: ${job.assignedTo || 'Unassigned'}`
-        ].join('\n');
-        if (currentMessage.length + details.length + 2 > 3500) {
-            messages.push(currentMessage);
-            currentMessage = `${heading}\n(continued)`;
-        }
-        currentMessage += `\n\n${details}`;
-    });
-    messages.push(currentMessage);
-    return messages;
+    return chunkTelegramReport([
+        `Open IT jobs (${date}) — ${openJobs.length}`,
+        ...(openJobs.length ? openJobs.map((job, index) => `${index + 1}. ${formatTelegramJob(job, date)}`) : ['No open IT jobs.'])
+    ]);
 }
 
 function createTelegramOverdueReport(jobs, date) {
@@ -342,24 +467,10 @@ function createTelegramOverdueReport(jobs, date) {
         .sort((a, b) => (a.followUpDate || '').localeCompare(b.followUpDate || ''));
     if (!overdueJobs.length) return [];
 
-    const heading = `Overdue IT job follow-ups (${date})\nOverdue jobs: ${overdueJobs.length}`;
-    const messages = [];
-    let currentMessage = heading;
-    overdueJobs.forEach((job, index) => {
-        const details = [
-            `${index + 1}. ${job.title}`,
-            `Status: ${job.status || 'Pending'} | Priority: ${job.priority || '—'}`,
-            `Follow-up date: ${job.followUpDate}`,
-            `Assigned to: ${job.assignedTo || 'Unassigned'}`
-        ].join('\n');
-        if (currentMessage.length + details.length + 2 > 3500) {
-            messages.push(currentMessage);
-            currentMessage = `${heading}\n(continued)`;
-        }
-        currentMessage += `\n\n${details}`;
-    });
-    messages.push(currentMessage);
-    return messages;
+    return chunkTelegramReport([
+        `Overdue IT job follow-ups (${date}) — ${overdueJobs.length}`,
+        ...overdueJobs.map((job, index) => `${index + 1}. ${formatTelegramJob(job, date)}`)
+    ]);
 }
 
 function startTelegramDailyReportScheduler() {
@@ -382,7 +493,8 @@ function startTelegramDailyReportScheduler() {
             const data = readDB();
             const lastDailyReportByChat = data.telegramDailyReports || {};
             const lastOverdueReportByChat = data.telegramOverdueReports || {};
-            const dailyReport = createTelegramDailyReport(data.jobs, date);
+            const settings = getTelegramSettings(data);
+            const dailyReport = createTelegramDailyReport(data, date, settings);
             const overdueReport = createTelegramOverdueReport(data.jobs, date);
 
             for (const chatId of TELEGRAM_CONFIG.chatIds) {
@@ -419,6 +531,78 @@ async function recordTelegramReportDate(property, chatId, date) {
     } finally {
         releaseWriteLock();
     }
+}
+
+function startTelegramCommandPolling() {
+    if (!TELEGRAM_CONFIG) return;
+    console.log('[Telegram] Command replies enabled for allowed chats.');
+    void pollTelegramCommands();
+}
+
+let telegramCommandPolling = false;
+let telegramUpdateOffset;
+async function pollTelegramCommands() {
+    if (telegramCommandPolling || !TELEGRAM_CONFIG) return;
+    telegramCommandPolling = true;
+    let retryDelay = 0;
+    try {
+        const updates = await telegramApiRequest('getUpdates', {
+            offset: telegramUpdateOffset,
+            timeout: 25,
+            allowed_updates: ['message']
+        }, 35000);
+        if (!Array.isArray(updates)) throw new Error('Telegram returned an invalid updates list.');
+
+        for (const update of updates) {
+            try {
+                await handleTelegramCommand(update);
+            } catch (error) {
+                logTelegramError('Could not handle a bot command', error);
+            }
+            if (Number.isInteger(update.update_id)) telegramUpdateOffset = update.update_id + 1;
+        }
+    } catch (error) {
+        if (error.telegramErrorCode === 409) {
+            console.error('[Telegram] Command polling cannot run while a webhook is active. Remove the webhook to enable bot commands.');
+            retryDelay = 60000;
+        } else {
+            logTelegramError('Command polling failed', error);
+            retryDelay = 5000;
+        }
+    } finally {
+        telegramCommandPolling = false;
+        const timer = setTimeout(pollTelegramCommands, retryDelay);
+        timer.unref();
+    }
+}
+
+async function handleTelegramCommand(update) {
+    const message = update.message;
+    if (!message || !message.chat || message.from?.is_bot || typeof message.text !== 'string') return;
+    const chatId = String(message.chat.id);
+    if (!TELEGRAM_CONFIG.chatIds.includes(chatId)) return;
+
+    const match = message.text.trim().match(/^\/([A-Za-z0-9_]+)(?:@[\w]+)?(?:\s|$)/);
+    if (!match) return;
+
+    const data = readDB();
+    const settings = getTelegramSettings(data);
+    const command = match[1].toLowerCase();
+    let replies;
+    if (command === 'start' || command === 'help') {
+        replies = [settings.helpResponse];
+    } else if (command === 'report') {
+        const { date } = getManilaDateTime();
+        replies = [
+            ...createTelegramDailyReport(data, date, settings),
+            ...createTelegramOverdueReport(data.jobs, date)
+        ];
+    } else if (command === 'jobs') {
+        replies = createTelegramJobsReport(data.jobs, getManilaDateTime().date);
+    } else {
+        replies = [settings.unknownCommandResponse];
+    }
+    await sendTelegramMessagesToChat(chatId, replies);
 }
 
 function getReportDateRange(query) {
@@ -797,8 +981,9 @@ app.post('/api/telegram/reports/send', isOwner, async (req, res) => {
     try {
         const { date } = getManilaDateTime();
         const data = readDB();
+        const settings = getTelegramSettings(data);
         const overdueReport = createTelegramOverdueReport(data.jobs, date);
-        const messages = [...createTelegramDailyReport(data.jobs, date), ...overdueReport];
+        const messages = [...createTelegramDailyReport(data, date, settings), ...overdueReport];
         let deliveredChats = 0;
         for (const chatId of TELEGRAM_CONFIG.chatIds) {
             if (await sendTelegramMessagesToChat(chatId, messages)) deliveredChats += 1;
@@ -811,13 +996,40 @@ app.post('/api/telegram/reports/send', isOwner, async (req, res) => {
         }
         return res.json({
             success: true,
-            message: `Open-jobs report${overdueReport.length ? ' and overdue follow-up alert' : ''} sent to ${deliveredChats} configured chat(s).`
+            message: `Inventory and jobs report${overdueReport.length ? ' plus overdue follow-up alert' : ''} sent to ${deliveredChats} configured chat(s).`
         });
     } catch (error) {
         console.error('[Telegram] Manual report trigger failed:', error.message);
         return res.status(500).json({ success: false, message: 'Could not generate or send Telegram reports.' });
     } finally {
         manualTelegramReportInProgress = false;
+    }
+});
+
+app.get('/api/telegram/settings', isOwner, (req, res) => {
+    try {
+        res.json(getTelegramSettings(readDB()));
+    } catch (error) {
+        console.error('[Telegram] Could not load notification settings:', error.message);
+        res.status(500).json({ success: false, message: 'Could not load Telegram settings.' });
+    }
+});
+
+app.put('/api/telegram/settings', isOwner, async (req, res) => {
+    const validated = validateTelegramSettings(req.body);
+    if (validated.error) return res.status(400).json({ success: false, message: validated.error });
+
+    await acquireWriteLock();
+    try {
+        const data = readDB();
+        data.telegramSettings = validated.settings;
+        writeDB(data);
+        res.json({ success: true, settings: validated.settings });
+    } catch (error) {
+        console.error('[Telegram] Could not save notification settings:', error.message);
+        res.status(500).json({ success: false, message: 'Could not save Telegram settings.' });
+    } finally {
+        releaseWriteLock();
     }
 });
 
@@ -1524,7 +1736,7 @@ app.post('/api/jobs', requireAuthenticated, async (req, res) => {
         };
         db.jobs.push(job);
         writeDB(db);
-        notifyTelegramAboutJob(job, 'New IT job filed');
+        notifyTelegramAboutJob(job, 'newJobTemplate', getTelegramSettings(db));
         res.status(201).json({ success: true, job });
     } catch (err) {
         console.error('[API] Error filing IT job:', err.message);
@@ -1554,7 +1766,7 @@ app.patch('/api/jobs/:id/status', requireAuthenticated, async (req, res) => {
         job.statusHistory.push({ status, note, changedBy: req.auth.username, changedAt: updatedAt });
         job.updatedAt = updatedAt;
         writeDB(db);
-        if (status !== previousStatus) notifyTelegramAboutJob(job, 'IT job status changed');
+        if (status !== previousStatus) notifyTelegramAboutJob(job, 'statusChangeTemplate', getTelegramSettings(db));
         res.json({ success: true, job });
     } catch (err) {
         console.error('[API] Error updating IT job status:', err.message);
@@ -1736,4 +1948,5 @@ app.listen(PORT, () => {
         console.log('[Telegram] Notifications are not configured.');
     }
     startTelegramDailyReportScheduler();
+    startTelegramCommandPolling();
 });

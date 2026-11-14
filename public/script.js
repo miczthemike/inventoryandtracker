@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('userCreateForm').addEventListener('submit', createUser);
     document.getElementById('userCreateForm').elements.role.addEventListener('change', updateCreatePermissionVisibility);
     document.getElementById('sendTelegramReportsButton').addEventListener('click', sendTelegramReportsNow);
+    document.getElementById('telegramSettingsForm').addEventListener('submit', saveTelegramSettings);
     document.getElementById('userTableBody').addEventListener('click', handleUserAction);
     document.getElementById('userEditForm').elements.role.addEventListener('change', updateEditPermissionVisibility);
     document.getElementById('userEditForm').addEventListener('submit', saveUserAccess);
@@ -385,6 +386,64 @@ async function sendTelegramReportsNow() {
     }
 }
 
+async function loadTelegramSettings() {
+    if (!authState?.isOwner) return;
+    const status = document.getElementById('telegramSettingsStatus');
+    status.classList.remove('text-red-600');
+    status.textContent = 'Loading Telegram settings…';
+    try {
+        const response = await fetch('/api/telegram/settings');
+        const settings = await response.json();
+        if (response.status === 401) {
+            await handleExpiredSession();
+            return;
+        }
+        if (!response.ok || !settings || typeof settings !== 'object') {
+            throw new Error(settings?.message || 'Could not load Telegram settings.');
+        }
+        const form = document.getElementById('telegramSettingsForm');
+        Object.keys(settings).forEach(key => {
+            if (form.elements.namedItem(key)) form.elements.namedItem(key).value = settings[key];
+        });
+        status.textContent = '';
+    } catch (error) {
+        console.error('[Telegram] Could not load settings:', error);
+        status.textContent = error.message || 'Could not load Telegram settings.';
+        status.classList.add('text-red-600');
+    }
+}
+
+async function saveTelegramSettings(event) {
+    event.preventDefault();
+    if (!authState?.isOwner) return;
+    const form = event.target;
+    const button = document.getElementById('saveTelegramSettingsButton');
+    const status = document.getElementById('telegramSettingsStatus');
+    button.disabled = true;
+    status.classList.remove('text-red-600');
+    status.textContent = 'Saving Telegram settings…';
+    try {
+        const response = await fetch('/api/telegram/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(new FormData(form).entries()))
+        });
+        const result = await response.json();
+        if (response.status === 401) {
+            await handleExpiredSession();
+            return;
+        }
+        if (!response.ok || !result.success) throw new Error(result.message || 'Could not save Telegram settings.');
+        status.textContent = 'Telegram responses and templates saved.';
+    } catch (error) {
+        console.error('[Telegram] Could not save settings:', error);
+        status.textContent = error.message || 'Could not save Telegram settings.';
+        status.classList.add('text-red-600');
+    } finally {
+        button.disabled = false;
+    }
+}
+
 function renderUsers() {
     const tbody = document.getElementById('userTableBody');
     tbody.innerHTML = '';
@@ -501,7 +560,10 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById('tab-' + tabName).classList.add('active');
     document.getElementById('content-' + tabName).classList.add('active');
-    if (tabName === 'users') loadUsers().catch(error => alert(error.message));
+    if (tabName === 'users') {
+        loadUsers().catch(error => alert(error.message));
+        loadTelegramSettings();
+    }
 }
 
 // ============================================================
