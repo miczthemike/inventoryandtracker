@@ -475,12 +475,13 @@ function createTelegramOverdueReport(jobs, date) {
 
 function startTelegramDailyReportScheduler() {
     if (!TELEGRAM_CONFIG) return;
-    const reportTime = (process.env.TELEGRAM_DAILY_REPORT_TIME || '09:00').trim();
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(reportTime)) {
+    const morningReportTime = (process.env.TELEGRAM_DAILY_REPORT_TIME || '09:00').trim();
+    const reportTimes = [...new Set([morningReportTime, '18:00', '22:00'])].sort();
+    if (reportTimes.some(reportTime => !/^([01]\d|2[0-3]):[0-5]\d$/.test(reportTime))) {
         console.error('[Telegram] Daily report is disabled. TELEGRAM_DAILY_REPORT_TIME must use 24-hour HH:MM.');
         return;
     }
-    console.log(`[Telegram] Alerts enabled for ${TELEGRAM_CONFIG.chatIds.length} chat(s); daily report at ${reportTime} Asia/Manila.`);
+    console.log(`[Telegram] Alerts enabled for ${TELEGRAM_CONFIG.chatIds.length} chat(s); daily reports at ${reportTimes.join(', ')} Asia/Manila.`);
 
     let checkInProgress = false;
     const checkForDailyReport = async () => {
@@ -488,7 +489,8 @@ function startTelegramDailyReportScheduler() {
         checkInProgress = true;
         try {
             const { date, time } = getManilaDateTime();
-            if (time < reportTime) return;
+            const dueReportTimes = reportTimes.filter(reportTime => time >= reportTime);
+            if (!dueReportTimes.length) return;
 
             const data = readDB();
             const lastDailyReportByChat = data.telegramDailyReports || {};
@@ -498,9 +500,18 @@ function startTelegramDailyReportScheduler() {
             const overdueReport = createTelegramOverdueReport(data.jobs, date);
 
             for (const chatId of TELEGRAM_CONFIG.chatIds) {
-                if (lastDailyReportByChat[chatId] !== date &&
-                    await sendTelegramMessagesToChat(chatId, dailyReport)) {
-                    await recordTelegramReportDate('telegramDailyReports', chatId, date);
+                const lastDailyReport = lastDailyReportByChat[chatId];
+                const sentReportTimes = lastDailyReport && lastDailyReport.date === date && Array.isArray(lastDailyReport.times)
+                    ? lastDailyReport.times
+                    : lastDailyReport === date
+                        ? [reportTimes[0]]
+                        : [];
+                for (const reportTime of dueReportTimes) {
+                    if (!sentReportTimes.includes(reportTime) &&
+                        await sendTelegramMessagesToChat(chatId, dailyReport)) {
+                        await recordTelegramReportDate('telegramDailyReports', chatId, date, reportTime, reportTimes[0]);
+                        sentReportTimes.push(reportTime);
+                    }
                 }
                 if (overdueReport.length && lastOverdueReportByChat[chatId] !== date &&
                     await sendTelegramMessagesToChat(chatId, overdueReport)) {
@@ -519,14 +530,27 @@ function startTelegramDailyReportScheduler() {
     timer.unref();
 }
 
-async function recordTelegramReportDate(property, chatId, date) {
+async function recordTelegramReportDate(property, chatId, date, scheduledTime, firstScheduledTime) {
     await acquireWriteLock();
     try {
         const latestData = readDB();
         if (!latestData[property] || typeof latestData[property] !== 'object') {
             latestData[property] = {};
         }
-        latestData[property][chatId] = date;
+        if (scheduledTime) {
+            const previousState = latestData[property][chatId];
+            const sentTimes = previousState && previousState.date === date && Array.isArray(previousState.times)
+                ? previousState.times
+                : previousState === date
+                    ? [firstScheduledTime]
+                    : [];
+            latestData[property][chatId] = {
+                date,
+                times: [...new Set([...sentTimes, scheduledTime])]
+            };
+        } else {
+            latestData[property][chatId] = date;
+        }
         writeDB(latestData);
     } finally {
         releaseWriteLock();
